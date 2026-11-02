@@ -18,6 +18,7 @@ jobs:
       plugin: ${{ steps.selection.outputs.plugin }}
       tag: ${{ steps.selection.outputs.tag }}
       package_asset: ${{ steps.selection.outputs.package_asset }}
+      environment_ready: ${{ steps.selection.outputs.environment_ready }}
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -35,6 +36,19 @@ jobs:
           if ($env:WORKFLOW_REF -cne 'refs/heads/main') {
             throw 'NuGet publication must be dispatched from the reviewed main branch.'
           }
+          Import-Module ./eng/NuGetRelease.psm1 -Force
+          $environmentOutput = & gh api "repos/$($env:RELEASE_REPOSITORY)/environments/nuget.org" 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not read the existing nuget.org environment; refusing to create or bypass it: $($environmentOutput -join "`n")"
+          }
+          $environment = ($environmentOutput -join "`n") | ConvertFrom-Json
+          $branchPolicyOutput = & gh api "repos/$($env:RELEASE_REPOSITORY)/environments/nuget.org/deployment-branch-policies" 2>&1
+          if ($LASTEXITCODE -ne 0) {
+            throw "Could not read nuget.org deployment branch protections: $($branchPolicyOutput -join "`n")"
+          }
+          $branchPolicies = ($branchPolicyOutput -join "`n") | ConvertFrom-Json
+          Assert-NuGetEnvironmentProtection -Environment $environment -BranchPolicies $branchPolicies
+          "environment_ready=true" >> $env:GITHUB_OUTPUT
           Import-Module ./eng/PluginRelease.psm1 -Force
           $selection = (./eng/Resolve-ReleaseSelection.ps1 -Tag $env:RELEASE_TAG | ConvertFrom-Json)[0]
           $component = @(Get-PluginRegistry | Where-Object key -CEQ $selection.key)[0]
@@ -63,6 +77,7 @@ jobs:
 
   publish:
     needs: plan
+    if: needs.plan.result == 'success' && needs.plan.outputs.environment_ready == 'true'
     runs-on: ubuntu-latest
     environment:
       name: nuget.org
@@ -91,7 +106,7 @@ jobs:
           New-Item -ItemType Directory -Path $env:ARTIFACT_DIRECTORY | Out-Null
           & gh release download $env:RELEASE_TAG --repo $env:RELEASE_REPOSITORY --dir $env:ARTIFACT_DIRECTORY --pattern $env:PACKAGE_ASSET --pattern "$($env:PACKAGE_ASSET).sha256" --pattern release-manifest.json
           if ($LASTEXITCODE -ne 0) { throw 'Could not download the published GitHub Release assets.' }
-      - name: Publish identical package bytes to NuGet.org
+      - name: Publish verified GitHub package to NuGet.org
         shell: pwsh
         env:
           NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}

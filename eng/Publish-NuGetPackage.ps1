@@ -14,7 +14,7 @@ $repositoryRoot = Split-Path $PSScriptRoot -Parent
 Import-Module (Join-Path $PSScriptRoot 'PluginRelease.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'NuGetRelease.psm1') -Force
 
-function Get-NuGetPublishedHash {
+function Get-NuGetPublishedPackagePath {
     param(
         [Parameter(Mandatory)][System.Net.Http.HttpClient] $Client,
         [Parameter(Mandatory)][string] $Uri
@@ -30,8 +30,11 @@ function Get-NuGetPublishedHash {
         }
 
         $stream = $response.Content.ReadAsStream()
+        $packagePath = Join-Path ([IO.Path]::GetTempPath()) "nuget-published-$([Guid]::NewGuid().ToString('N')).nupkg"
         try {
-            return [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($stream)).ToLowerInvariant()
+            $file = [IO.File]::Create($packagePath)
+            try { $stream.CopyTo($file) } finally { $file.Dispose() }
+            return $packagePath
         }
         finally {
             $stream.Dispose()
@@ -40,6 +43,19 @@ function Get-NuGetPublishedHash {
     finally {
         $response.Dispose()
     }
+}
+
+function Test-NuGetPublishedPackage {
+    param(
+        [Parameter(Mandatory)][string] $ExpectedPackagePath,
+        [Parameter(Mandatory)][string] $PublishedPackagePath
+    )
+
+    $verificationOutput = & dotnet nuget verify $PublishedPackagePath --all --verbosity normal 2>&1
+    $verificationExitCode = $LASTEXITCODE
+    Assert-NuGetRepositorySignature -PackagePath $PublishedPackagePath `
+        -VerificationExitCode $verificationExitCode -VerificationOutput ($verificationOutput -join "`n")
+    Compare-NuGetPackagePayload -ExpectedPackagePath $ExpectedPackagePath -PublishedPackagePath $PublishedPackagePath
 }
 
 $selection = @(Resolve-PluginSelection -Tag $Tag -Plugins @($Plugin))[0]
@@ -116,27 +132,37 @@ $packageUrl = "https://api.nuget.org/v3-flatcontainer/$([Uri]::EscapeDataString(
 $httpClient = [System.Net.Http.HttpClient]::new()
 $httpClient.DefaultRequestHeaders.UserAgent.ParseAdd('LANCommander.Community-release/1.0')
 try {
-    $existingHash = Get-NuGetPublishedHash -Client $httpClient -Uri $packageUrl
-    $disposition = Resolve-NuGetPublicationDisposition -ExpectedHash $actualHash -PublishedHash $existingHash
-    if ($disposition -eq 'already-published') {
-        Write-Output "NuGet.org already contains identical bytes for $($component.packageId) $($selection.version); no upload was needed."
-        return
+    $existingPackagePath = Get-NuGetPublishedPackagePath -Client $httpClient -Uri $packageUrl
+    if ($null -ne $existingPackagePath) {
+        try {
+            Test-NuGetPublishedPackage -ExpectedPackagePath $packagePath -PublishedPackagePath $existingPackagePath
+            Write-Output "NuGet.org already contains the same verified package payload for $($component.packageId) $($selection.version); no upload was needed."
+            return
+        }
+        finally {
+            Remove-Item -LiteralPath $existingPackagePath -Force -ErrorAction SilentlyContinue
+        }
     }
 
     $pushOutput = & dotnet nuget push $packagePath --source 'https://api.nuget.org/v3/index.json' --api-key $env:NUGET_API_KEY 2>&1
     $pushExitCode = $LASTEXITCODE
     $pushError = ($pushOutput -join "`n").Replace($env:NUGET_API_KEY, '[REDACTED]')
     for ($attempt = 1; $attempt -le 12; $attempt++) {
-        $publishedHash = Get-NuGetPublishedHash -Client $httpClient -Uri $packageUrl
-        $disposition = Resolve-NuGetPublicationDisposition -ExpectedHash $actualHash -PublishedHash $publishedHash
-        if ($disposition -eq 'already-published') {
-            Write-Output "NuGet.org package verified: $($component.packageId) $($selection.version) ($actualHash)."
-            return
+        $publishedPackagePath = Get-NuGetPublishedPackagePath -Client $httpClient -Uri $packageUrl
+        if ($null -ne $publishedPackagePath) {
+            try {
+                Test-NuGetPublishedPackage -ExpectedPackagePath $packagePath -PublishedPackagePath $publishedPackagePath
+                Write-Output "NuGet.org package verified: $($component.packageId) $($selection.version) payload matches the release asset."
+                return
+            }
+            finally {
+                Remove-Item -LiteralPath $publishedPackagePath -Force -ErrorAction SilentlyContinue
+            }
         }
         if ($attempt -lt 12) { Start-Sleep -Seconds 5 }
     }
 
-    throw "NuGet.org did not expose the exact package bytes after push (exit $pushExitCode). $pushError"
+    throw "NuGet.org did not expose a verified package with the exact release payload after push (exit $pushExitCode). $pushError"
 }
 finally {
     $httpClient.Dispose()

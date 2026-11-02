@@ -130,7 +130,8 @@ package types, and required search tags are checked again before upload.
 Before enabling this path, a repository maintainer must:
 
 1. Create a GitHub Actions environment named `nuget.org` and configure required
-   reviewers. Restrict its deployment branches to `main`.
+   reviewers, enable **Prevent self-review**, and restrict its deployment
+   branches to the exact `main` branch only.
 2. Create a NuGet.org API key scoped only to push new versions of
    `LANCommander.Mcp` and `LANCommander.RecompCatalog.Plugin`, with an expiry,
    and add it as the environment secret `NUGET_API_KEY`. Do not use a personal
@@ -140,6 +141,15 @@ Before enabling this path, a repository maintainer must:
    deliberately run **Actions → Publish existing release to NuGet.org** from
    `main` and provide that exact component tag. GitHub's required-reviewer
    approval for the `nuget.org` environment is a second, separate gate.
+
+Before a job can reference the `nuget.org` environment, the manual workflow
+uses read-only GitHub REST API requests to confirm that the environment already
+exists, has a required reviewer with self-review prevention, and permits only
+the exact `main` branch. See GitHub's [environment configuration
+documentation](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments).
+Missing, unreadable, or unprotected configuration fails the planning job; it
+does not create the environment or proceed to the publishing job. Configure
+the environment separately before dispatching.
 
 The workflow rejects Launcher.MQTT and other ZIP artifacts rather than silently
 skipping them. It runs with `contents: read`; the API key is exposed only to
@@ -184,11 +194,27 @@ and the launcher's
 NuGet publication is a second-stage action after the GitHub Release is already
 published. A NuGet failure does not roll back or unpublish the GitHub Release.
 Rerun the manual workflow for the same tag: it downloads the same immutable
-GitHub Release asset and compares it with the package version already on
-NuGet.org. Identical bytes are treated as success; different bytes fail
-explicitly and are never overwritten. The publisher does not use
-`--skip-duplicate`. If a push response is ambiguous, it checks NuGet.org for
-the published package and verifies the SHA-256 before reporting success.
+GitHub Release asset. NuGet.org automatically adds a repository signature to
+uploaded packages, so the resulting flat-container `.nupkg` is not expected to
+have the same archive SHA-256 as the unsigned GitHub asset. On retry or after
+an ambiguous push, the publisher downloads the feed package, runs
+[`dotnet nuget verify --all`](https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-nuget-verify),
+requires a verified NuGet.org repository signature and its root
+`.signature.p7s` entry, then compares every archive path and uncompressed entry
+hash with the original asset. Only the root signature entry is excluded, and
+only after signature verification succeeds. The nuspec, package types, tags,
+and all other payload files must match; missing, additional, duplicate, or
+changed entries fail closed. The original verified GitHub bytes—not a
+downloaded or rewritten copy—are the bytes supplied to `dotnet nuget push`.
+The publisher does not use `--skip-duplicate`.
+
+The repository-signing behavior is documented by Microsoft's
+[signed package reference](https://learn.microsoft.com/en-us/nuget/reference/signed-packages-reference):
+all packages uploaded to nuget.org are automatically repository signed. The
+committed retry tests use a synthetic `.signature.p7s` fixture to test payload
+comparison and rejection behavior; they do not prove cryptographic signature
+validity. Live publication verifies the actual downloaded signature with the
+supported NuGet CLI. No real upload or credential setup is part of this change.
 
 Do not delete or replace a GitHub asset, retag a release, or reuse a package
 version to recover from a mismatch. Publish changed content only under a new

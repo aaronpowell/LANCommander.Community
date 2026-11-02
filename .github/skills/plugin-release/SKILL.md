@@ -38,12 +38,16 @@ retry rules, and permissions. Do not duplicate its changing version table here.
 6. NuGet publication is a separate, manual second stage for eligible server
    `.nupkg` assets only. Follow the optional NuGet procedure in `RELEASES.md`
    and require explicit authorization before dispatching it. It downloads the
-   exact published GitHub Release bytes and requires the configured `nuget.org`
-   environment review gate and `NUGET_API_KEY` secret. The current launcher
-   artifact is a ZIP and is not eligible.
+   exact published GitHub Release bytes. Before its publish job can reference
+   the `nuget.org` environment, a read-only preflight requires an existing
+   environment with reviewer approval, self-review prevention, and a `main`-
+   only deployment policy; the job also requires the environment review gate
+   and `NUGET_API_KEY` secret. The current launcher artifact is a ZIP and is
+   not eligible.
 7. On failure, inspect workflow and release state before retrying. GitHub
    release publication may fill missing assets in a draft only; it compares
-   existing bytes and never overwrites mismatched or published assets. The
-   NuGet publisher accepts an already-published version only when its bytes
-   match exactly; otherwise it fails without overwriting. Do not force-move or
-   reuse a tag, delete a release, or change an identity to bypass an error.
+   existing bytes and never overwrites mismatched or published assets. NuGet
+   adds a repository signature, so a retry verifies that signature and compares
+   every package payload entry rather than comparing archive hashes. A payload
+   mismatch fails without overwriting. Do not force-move or reuse a tag, delete
+   a release, or change an identity to bypass an error.

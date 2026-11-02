@@ -45,6 +45,53 @@ function New-TestPackage {
     }
 }
 
+function New-RepositorySignedTestPackage {
+    param(
+        [Parameter(Mandatory)][string] $SourcePath,
+        [Parameter(Mandatory)][string] $DestinationPath,
+        [string] $PayloadChange,
+        [switch] $DuplicatePayloadEntry
+    )
+
+    $sourceStream = [IO.File]::OpenRead($SourcePath)
+    $sourceArchive = [System.IO.Compression.ZipArchive]::new($sourceStream, [System.IO.Compression.ZipArchiveMode]::Read)
+    $destinationStream = [IO.File]::Create($DestinationPath)
+    $destinationArchive = [System.IO.Compression.ZipArchive]::new($destinationStream, [System.IO.Compression.ZipArchiveMode]::Create)
+    try {
+        foreach ($sourceEntry in $sourceArchive.Entries) {
+            $destinationEntry = $destinationArchive.CreateEntry($sourceEntry.FullName)
+            $entryInput = $sourceEntry.Open()
+            $output = $destinationEntry.Open()
+            try { $entryInput.CopyTo($output) } finally { $output.Dispose(); $entryInput.Dispose() }
+        }
+        if (-not [string]::IsNullOrEmpty($PayloadChange)) {
+            $changedEntry = $destinationArchive.CreateEntry('lib/payload.txt')
+            $writer = [IO.StreamWriter]::new($changedEntry.Open())
+            try { $writer.Write($PayloadChange) } finally { $writer.Dispose() }
+        }
+        if ($DuplicatePayloadEntry) {
+            $duplicateEntry = $destinationArchive.CreateEntry($sourceArchive.Entries[0].FullName)
+            $writer = [IO.StreamWriter]::new($duplicateEntry.Open())
+            try { $writer.Write('duplicate archive path') } finally { $writer.Dispose() }
+        }
+        $signatureEntry = $destinationArchive.CreateEntry('.signature.p7s')
+        $signatureStream = $signatureEntry.Open()
+        try {
+            $signatureBytes = [Text.Encoding]::UTF8.GetBytes('synthetic repository signature fixture')
+            $signatureStream.Write($signatureBytes, 0, $signatureBytes.Length)
+        }
+        finally {
+            $signatureStream.Dispose()
+        }
+    }
+    finally {
+        $destinationArchive.Dispose()
+        $destinationStream.Dispose()
+        $sourceArchive.Dispose()
+        $sourceStream.Dispose()
+    }
+}
+
 function New-TestArtifact {
     param(
         [Parameter(Mandatory)][string] $Directory,
@@ -96,9 +143,11 @@ try {
         $nugetWorkflow -match '(?m)^  push:' -or
         $nugetWorkflow -notmatch "WORKFLOW_REF -cne 'refs/heads/main'" -or
         $nugetWorkflow -notmatch 'name:\s+nuget\.org' -or
+        $nugetWorkflow -notmatch 'Assert-NuGetEnvironmentProtection' -or
+        $nugetWorkflow -notmatch 'environment_ready' -or
         $nugetWorkflow -notmatch 'NUGET_API_KEY:\s+\$\{\{\s*secrets\.NUGET_API_KEY\s*\}\}' -or
         $nugetWorkflow -notmatch 'Publish-NuGetPackage\.ps1.*-Publish') {
-        throw 'NuGet publication must stay manual, environment-gated, and explicitly opted in.'
+        throw 'NuGet publication must stay manual, environment-preflighted, gated, and explicitly opted in.'
     }
     $tagWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release.yml') -Raw
     if ($tagWorkflow -match 'NUGET_API_KEY|Publish-NuGetPackage') {
@@ -168,18 +217,75 @@ try {
         & $publisher -Plugin Launcher.MQTT -Tag launcher-mqtt-v0.2.0 -ArtifactDirectory $launcherDirectory -Publish -PlanOnly
     } 'not eligible for NuGet publication' 'ZIP ineligibility'
 
-    $hash = ('a' * 64)
-    if ((Resolve-NuGetPublicationDisposition -ExpectedHash $hash -PublishedHash $null) -cne 'publish') {
-        throw 'A missing NuGet version should be published.'
-    }
-    if ((Resolve-NuGetPublicationDisposition -ExpectedHash $hash -PublishedHash $hash) -cne 'already-published') {
-        throw 'An identical published package should be idempotently accepted.'
-    }
-    Assert-Fails {
-        Resolve-NuGetPublicationDisposition -ExpectedHash $hash -PublishedHash ('b' * 64)
-    } 'different bytes' 'Immutable NuGet version check'
+    $expectedPackagePath = Join-Path $validDirectory 'LANCommander.Mcp.0.2.1.nupkg'
+    $signedPackagePath = Join-Path $testRoot 'repository-signed.nupkg'
+    New-RepositorySignedTestPackage -SourcePath $expectedPackagePath -DestinationPath $signedPackagePath
+    $validVerificationOutput = @'
+Package name: LANCommander.Mcp
+Signature type: Repository
+Service index: https://api.nuget.org/v3/index.json
+'@
+    Assert-NuGetRepositorySignature -PackagePath $signedPackagePath -VerificationExitCode 0 -VerificationOutput $validVerificationOutput
+    Compare-NuGetPackagePayload -ExpectedPackagePath $expectedPackagePath -PublishedPackagePath $signedPackagePath
 
-    Write-Output 'NuGet publication tests passed.'
+    $changedNuspecPath = Join-Path $testRoot 'changed-nuspec.nupkg'
+    New-TestPackage -Path $changedNuspecPath -PackageId 'LANCommander.Mcp' -Version '0.2.1' -Tags @('changed')
+    $changedNuspecSignedPath = Join-Path $testRoot 'changed-nuspec-signed.nupkg'
+    New-RepositorySignedTestPackage -SourcePath $changedNuspecPath -DestinationPath $changedNuspecSignedPath
+    Assert-Fails {
+        Compare-NuGetPackagePayload -ExpectedPackagePath $expectedPackagePath -PublishedPackagePath $changedNuspecSignedPath
+    } "archive path 'LANCommander.Mcp.nuspec'" 'Changed nuspec retry'
+
+    $changedPayloadPath = Join-Path $testRoot 'changed-payload.nupkg'
+    New-RepositorySignedTestPackage -SourcePath $expectedPackagePath -DestinationPath $changedPayloadPath -PayloadChange 'different payload'
+    Assert-Fails {
+        Compare-NuGetPackagePayload -ExpectedPackagePath $expectedPackagePath -PublishedPackagePath $changedPayloadPath
+    } 'different set of archive entries' 'Additional package payload retry'
+
+    $duplicateEntryPath = Join-Path $testRoot 'duplicate-entry.nupkg'
+    New-RepositorySignedTestPackage -SourcePath $expectedPackagePath -DestinationPath $duplicateEntryPath -DuplicatePayloadEntry
+    Assert-Fails {
+        Compare-NuGetPackagePayload -ExpectedPackagePath $expectedPackagePath -PublishedPackagePath $duplicateEntryPath
+    } 'duplicate archive path' 'Duplicate archive path retry'
+    Assert-Fails {
+        Assert-NuGetRepositorySignature -PackagePath $signedPackagePath -VerificationExitCode 1 -VerificationOutput 'signature invalid'
+    } 'signature verification failed' 'Invalid NuGet signature'
+    Assert-Fails {
+        Assert-NuGetRepositorySignature -PackagePath $signedPackagePath -VerificationExitCode 0 -VerificationOutput 'Signature type: Repository'
+    } 'not verified as repository-signed' 'Non-NuGet.org repository signature'
+
+    $unsignedPackagePath = Join-Path $testRoot 'unsigned-published.nupkg'
+    Copy-Item -LiteralPath $expectedPackagePath -Destination $unsignedPackagePath
+    Assert-Fails {
+        Assert-NuGetRepositorySignature -PackagePath $unsignedPackagePath -VerificationExitCode 0 -VerificationOutput $validVerificationOutput
+    } 'exactly one root .signature.p7s' 'Missing repository signature entry'
+
+    $environment = [pscustomobject]@{
+        name = 'nuget.org'
+        protection_rules = @([pscustomobject]@{
+            type = 'required_reviewers'
+            reviewers = @([pscustomobject]@{ type = 'User'; reviewer = [pscustomobject]@{ login = 'release-reviewer' } })
+            prevent_self_review = $true
+        })
+        deployment_branch_policy = [pscustomobject]@{ custom_branch_policies = $true; protected_branches = $false }
+    }
+    $mainPolicy = [pscustomobject]@{ branch_policies = @([pscustomobject]@{ type = 'branch'; name = 'main' }) }
+    Assert-NuGetEnvironmentProtection -Environment $environment -BranchPolicies $mainPolicy
+    Assert-Fails {
+        $unprotected = $environment | Select-Object *
+        $unprotected.name = 'missing'
+        Assert-NuGetEnvironmentProtection -Environment $unprotected -BranchPolicies $mainPolicy
+    } 'existing nuget.org environment' 'Missing NuGet environment'
+    Assert-Fails {
+        $noReviewer = [pscustomobject]@{ name = 'nuget.org'; protection_rules = @(); deployment_branch_policy = $environment.deployment_branch_policy }
+        Assert-NuGetEnvironmentProtection -Environment $noReviewer -BranchPolicies $mainPolicy
+    } 'must require at least one reviewer' 'Unprotected NuGet environment'
+    Assert-Fails {
+        $otherPolicy = [pscustomobject]@{ branch_policies = @([pscustomobject]@{ type = 'branch'; name = '*' }) }
+        Assert-NuGetEnvironmentProtection -Environment $environment -BranchPolicies $otherPolicy
+    } 'allow deployments from main only' 'Broad NuGet branch policy'
+
+    Write-Output 'NuGet publication tests passed. Repository-signature fixtures are synthetic and do not replace dotnet nuget verify.'
 }
 finally {
     if ($null -eq $originalApiKey) {
