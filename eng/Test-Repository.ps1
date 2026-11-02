@@ -65,8 +65,11 @@ foreach ($project in $projects) {
     }
 }
 
-$trackedConfig = & git -C $repositoryRoot ls-files --error-unmatch 'plugins/Launcher.MQTT/**/homeassistant.json' 2>$null
-if ($LASTEXITCODE -eq 0) {
+$trackedConfigs = @(& git -C $repositoryRoot ls-files -- 'plugins/Launcher.MQTT/**/homeassistant.json')
+if ($LASTEXITCODE -ne 0) {
+    throw 'Could not inspect tracked launcher configuration files.'
+}
+if ($trackedConfigs.Count -gt 0) {
     throw 'A populated launcher homeassistant.json must not be tracked; only the blank example belongs in source control.'
 }
 

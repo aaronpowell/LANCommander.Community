@@ -128,7 +128,7 @@ public class LcxPackageBuilderTests
                 value => value.Provider == "IGDB" && value.ExternalId == "123");
             Assert.Equal("v1.2.3", manifest.Version);
             Assert.Contains("owner/repository", manifest.Notes);
-            Assert.Equal("bin\\game.exe", Assert.Single(manifest.Actions).Path);
+            Assert.Equal(Path.Combine("bin", "game.exe"), Assert.Single(manifest.Actions).Path);
             Assert.Equal(result.ArchiveId, Assert.Single(manifest.Archives).Id);
             Assert.Contains(
                 manifest.CustomFields,

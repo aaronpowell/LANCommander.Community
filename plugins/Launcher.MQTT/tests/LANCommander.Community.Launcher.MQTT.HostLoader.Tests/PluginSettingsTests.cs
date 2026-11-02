@@ -75,13 +75,15 @@ public sealed class PluginSettingsTests
     [InlineData(2)]
     public void Remote_install_rejects_missing_or_ambiguous_destinations(int count)
     {
-        var directories = Enumerable.Range(0, count).Select(index => $@"C:\Games{index}");
+        var directories = Enumerable.Range(0, count)
+            .Select(index => Path.Combine(Path.GetTempPath(), $"Games{index}"));
         var exception = Assert.Throws<LANCommander.Community.Launcher.MQTT.Core.RemoteOperationException>(() =>
             LANCommanderGameLaunchHost.RequireInstallDestination(directories));
         Assert.Contains("install_destination_not_configured", exception.Message);
         Assert.Throws<LANCommander.Community.Launcher.MQTT.Core.RemoteOperationException>(() =>
             LANCommanderGameLaunchHost.RequireInstallDestination(["relative"]));
-        Assert.Equal(@"C:\Games", LANCommanderGameLaunchHost.RequireInstallDestination([@"C:\Games"]));
+        var installDirectory = Path.Combine(Path.GetTempPath(), "Games");
+        Assert.Equal(installDirectory, LANCommanderGameLaunchHost.RequireInstallDestination([installDirectory]));
     }
 
     [Fact]
