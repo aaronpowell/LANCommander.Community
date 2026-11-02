@@ -47,19 +47,9 @@ Use the component validation commands above to build and run tests. Launcher hos
 
 ## Independent releases
 
-The authoritative plugin version is `version.txt` in the component directory; `CHANGELOG.md` records that component's release history. Shared build defaults and NuGet dependency versions live in root `Directory.Build.props` and `Directory.Packages.props`. LANCommander compile-time packages use `2.2.0-alpha.4`; the launcher host-source commit is separately pinned in [`eng/lancommander-source.json`](eng/lancommander-source.json).
+The authoritative plugin version is `version.txt` in the component directory; `CHANGELOG.md` records that component's release history. Shared build defaults and NuGet dependency versions live in root `Directory.Build.props` and `Directory.Packages.props`. LANCommander compile-time packages use `2.2.0-alpha.4`; the launcher host-source commit is separately pinned in [`eng/lancommander-source.json`](eng/lancommander-source.json). Maintainers should follow the full [plugin release procedure](RELEASES.md) before preparing or pushing a release tag.
 
-Release tags explicitly select one plugin:
-
-```text
-server-mcp-v0.2.1
-server-recompcatalog-v0.4.2
-launcher-mqtt-v0.2.0
-```
-
-The release workflow verifies the tag's complete SemVer version against that component's version file, validates the selected package, and publishes only the checked artifact bytes. Server components produce NuGet plugin packages; Launcher.MQTT currently produces a drop-in ZIP, not a launcher NuGet package. Releases are GitHub Releases only; no NuGet.org publishing is configured.
-
-For a coordinated LANCommander upgrade, update the central package baseline and (when needed) the pinned launcher source, then update the version/changelog of each affected component in the same reviewed change. Give each component its own next SemVer version and create a separate matching tag for each artifact. Shared changes do not automatically release every component, and one plugin's tag never publishes the others.
+Release tags explicitly select one plugin, and each tag runs its own validated build and GitHub Release publication. A pushed release tag is the publication trigger; it is not merely a draft request. Server components produce NuGet plugin packages; Launcher.MQTT currently produces a drop-in ZIP, not a launcher NuGet package. Releases are GitHub Releases only; no NuGet.org publishing is configured.
 
 The server package feeds contain `LANCommander.SDK`, `LANCommander.Server.Plugins`, and `LANCommander.Server.UI` `2.2.0-alpha.4` packages. Their runtime/native exclusions and plugin load-context checks are preserved; helper projects are not separately packed. Launcher source contracts are materialized from the fixed commit rather than being represented by a guessed NuGet adapter.
 
@@ -76,3 +66,7 @@ The launcher prototype's earlier HA-to-LANCommander launch PoC was reported work
 The source snapshots were imported from the MCP, Recomp Catalog, and Home Assistant launcher prototype worktrees. Historical server NuGet PackageIds, runtime AssemblyNames, plugin IDs, persisted data, HA entity, and configuration identities are retained. The source project and namespace hierarchy now follows `LANCommander.Community`; the launcher's logical component name is `Launcher.MQTT`. Keep existing launcher plugin directories and populated `homeassistant.json` files when upgrading. The package template contains blank broker credentials only.
 
 No original repository is changed or archived by this monorepo. The community repository is independent and is not an official LANCommander release channel.
+
+## Contributor and agent guidance
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for project conventions and repository-local agent guidance. Focused `SKILL.md` files for plugin maintenance, release preparation, and authoring additional repository skills are discoverable under [`.github/skills`](.github/skills/).
