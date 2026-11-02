@@ -42,6 +42,7 @@ merging:
 ```powershell
 pwsh ./eng/Test-ReleaseSelection.ps1
 pwsh ./eng/Test-Repository.ps1
+pwsh ./eng/Test-NuGetPublication.ps1
 pwsh ./eng/Validate-Plugin.ps1 -Plugin Server.Mcp -OutputDirectory ./artifacts/validation-mcp
 pwsh ./eng/Validate-Plugin.ps1 -Plugin Server.RecompCatalog -OutputDirectory ./artifacts/validation-recomp
 pwsh ./eng/Validate-Plugin.ps1 -Plugin Launcher.MQTT -OutputDirectory ./artifacts/validation-launcher
@@ -111,10 +112,87 @@ asset, its `.sha256` sidecar, and `release-manifest.json`, then checks their
 SHA-256 hashes against the manifest and downloaded release assets. Once all
 three files are verified, the workflow changes the release from draft to
 published. This occurs automatically within the tag-triggered run; the
-workflow does not stop at a draft for a separate approval click. Releases are
-distributed through this repository's GitHub Releases only. Server `.nupkg`
-files are LANCommander plugin packages, not NuGet.org publications.
-Launcher.MQTT is a drop-in ZIP and is not claimed to support NuGet installation.
+workflow does not stop at a draft for a separate approval click. Tag-driven
+releases publish to this repository's GitHub Releases only; NuGet.org is never
+part of the tag-triggered path.
+
+## Optional NuGet.org distribution
+
+Only the existing server `.nupkg` artifacts are eligible:
+`LANCommander.Mcp` and `LANCommander.RecompCatalog.Plugin`. The separate
+[Publish existing release to NuGet.org](.github/workflows/publish-nuget.yml)
+workflow is manual-only. It requires a
+tag that already points to `main` and has a fully published GitHub Release;
+it downloads the exact package, checksum, and manifest assets from that release
+instead of rebuilding them. The package checksum and nuspec identity, version,
+package types, and required search tags are checked again before upload.
+
+Before enabling this path, a repository maintainer must:
+
+1. Create a GitHub Actions environment named `nuget.org` and configure required
+   reviewers. Restrict its deployment branches to `main`.
+2. Create a NuGet.org API key scoped only to push new versions of
+   `LANCommander.Mcp` and `LANCommander.RecompCatalog.Plugin`, with an expiry,
+   and add it as the environment secret `NUGET_API_KEY`. Do not use a personal
+   account-wide key or commit the secret. No environment, secret, account, or
+   NuGet publisher is configured by this change.
+3. After the ordinary component tag workflow has published its GitHub Release,
+   deliberately run **Actions → Publish existing release to NuGet.org** from
+   `main` and provide that exact component tag. GitHub's required-reviewer
+   approval for the `nuget.org` environment is a second, separate gate.
+
+The workflow rejects Launcher.MQTT and other ZIP artifacts rather than silently
+skipping them. It runs with `contents: read`; the API key is exposed only to
+the publish step after the environment gate. The default tag workflow has no
+NuGet credentials or NuGet publication step. The publisher script refuses
+live publication outside GitHub Actions; do not invoke it manually.
+
+NuGet plugin discovery uses the nuspec **package types**, not merely NuGet
+search tags. LANCommander searches for `LANCommander.Plugin.Server` on the
+server and `LANCommander.Plugin.Launcher` on the launcher; each plugin package
+also declares `LANCommander.Plugin`. The current Server.Mcp and
+Server.RecompCatalog projects declare the generic and server package types.
+Their `PackageTags` are supplemental search terms. The community package build
+and repository checks verify this metadata.
+
+For any future launcher `.nupkg`, its package types would need to be
+`LANCommander.Plugin` and `LANCommander.Plugin.Launcher`; tags alone would not
+make it discoverable. Launcher.MQTT is currently non-packable and ships a
+source-pinned drop-in ZIP, so it remains ineligible until a separately reviewed
+packaging change validates the launcher loader contract. The ZIP is not a
+NuGet package.
+
+Discovery still does not establish installability. LANCommander inspects the
+single plugin assembly under `lib/<framework>` for its
+`[LANCommanderPlugin]` metadata, including `Hosts` and host-version bounds.
+At inspection time, upstream `main` was commit
+[`38f162d`](https://github.com/LANCommander/LANCommander/commit/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d).
+The community Launcher.MQTT build separately remains pinned to
+LANCommander `v2.2.0-alpha.4` commit
+[`4c8c73e`](https://github.com/LANCommander/LANCommander/commit/4c8c73e47da6d4198c6153cc93ca7bb480d30abe).
+The inspected upstream discovery sources are:
+[`PluginPackageTypes.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.SDK/Plugins/PluginPackageTypes.cs),
+[`PluginFeedClient.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.PluginManagement/PluginFeedClient.cs),
+[`PluginPackageReader.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.PluginManagement/PluginPackageReader.cs),
+[`PluginAssemblyInspector.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.PluginManagement/PluginAssemblyInspector.cs),
+[`LANCommanderPluginAttribute.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.SDK/Plugins/LANCommanderPluginAttribute.cs),
+and the launcher's
+[`LauncherPluginCache.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.Server/Plugins/Installation/LauncherPluginCache.cs).
+
+### NuGet publication ordering and retries
+
+NuGet publication is a second-stage action after the GitHub Release is already
+published. A NuGet failure does not roll back or unpublish the GitHub Release.
+Rerun the manual workflow for the same tag: it downloads the same immutable
+GitHub Release asset and compares it with the package version already on
+NuGet.org. Identical bytes are treated as success; different bytes fail
+explicitly and are never overwritten. The publisher does not use
+`--skip-duplicate`. If a push response is ambiguous, it checks NuGet.org for
+the published package and verifies the SHA-256 before reporting success.
+
+Do not delete or replace a GitHub asset, retag a release, or reuse a package
+version to recover from a mismatch. Publish changed content only under a new
+component version and tag after maintainer review and authorization.
 
 ## Coordinated LANCommander compatibility upgrades
 
@@ -165,10 +243,13 @@ successful releases.
 ## Permissions and compatibility boundaries
 
 The tag-triggered workflow is granted `contents: write` to create the GitHub
-Release and upload its assets. A maintainer needs the repository permissions
-to merge the reviewed source to `main` and push the release tag. No PAT or
-external publishing service is configured. Do not grant broader permissions
-or perform a remote tag/release action without explicit authorization.
+Release and upload its assets. The optional NuGet workflow is manual-only and
+uses `contents: read` plus the `nuget.org` environment secret after required
+reviewer approval. A maintainer needs the repository permissions to merge the
+reviewed source to `main` and push the release tag. No NuGet environment,
+secret, account, or trusted publisher is configured. Do not grant broader
+permissions or perform a remote tag/release action without explicit
+authorization.
 
 Project paths and C# namespaces use the `LANCommander.Community` hierarchy.
 Historical deployed package IDs, assembly names, plugin IDs, launcher install

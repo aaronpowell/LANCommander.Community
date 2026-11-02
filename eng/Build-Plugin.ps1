@@ -67,6 +67,7 @@ else {
     if (-not (Test-Path -LiteralPath $asset)) {
         throw "Pack did not produce the expected selected-plugin asset: $asset"
     }
+    & (Join-Path $PSScriptRoot 'Test-NuGetPackage.ps1') -Plugin $Plugin -PackagePath $asset -ExpectedVersion $version
     if ($Plugin -eq 'Server.Mcp') {
         & (Join-Path $repositoryRoot 'plugins/Server.Mcp/eng/Test-Package.ps1') -PackagePath $asset -ExpectedVersion $version
     }

@@ -22,6 +22,26 @@ foreach ($plugin in $plugins) {
     if ($rootNamespace -cne $plugin.rootNamespace -or $rootNamespace -notmatch '^LANCommander\.Community\.') {
         throw "$($plugin.key) root namespace does not match the Community naming registry."
     }
+    $packageTypes = @(([string]$pluginProjectXml.Project.PropertyGroup.PackageType).Split(';', [StringSplitOptions]::RemoveEmptyEntries))
+    $expectedTypes = @($plugin.packageTypes)
+    if (@(Compare-Object $expectedTypes $packageTypes).Count -gt 0) {
+        throw "$($plugin.key) PackageType metadata does not match the release registry."
+    }
+    $packageTags = @(([string]$pluginProjectXml.Project.PropertyGroup.PackageTags).Split(';', [StringSplitOptions]::RemoveEmptyEntries))
+    foreach ($requiredTag in @($plugin.packageTags)) {
+        if ($requiredTag -notin $packageTags) {
+            throw "$($plugin.key) is missing required package search tag '$requiredTag'."
+        }
+    }
+    if ($plugin.artifactFormat -eq 'zip' -and $expectedTypes.Count -gt 0) {
+        throw "$($plugin.key) ZIP artifacts must not claim NuGet package types."
+    }
+    if ($plugin.artifactFormat -eq 'zip' -and $pluginProjectXml.Project.PropertyGroup.IsPackable -cne 'false') {
+        throw "$($plugin.key) ZIP-only project must remain non-packable as a NuGet package."
+    }
+    if ($plugin.artifactFormat -eq 'nupkg' -and $expectedTypes.Count -eq 0) {
+        throw "$($plugin.key) NuGet artifacts must declare their host package types."
+    }
 }
 
 $requiredFiles = @(

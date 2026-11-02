@@ -21,6 +21,7 @@ jobs:
         run: |
           ./eng/Test-ReleaseSelection.ps1
           ./eng/Test-Repository.ps1
+          ./eng/Test-NuGetPublication.ps1
 
   validate:
     runs-on: ubuntu-latest

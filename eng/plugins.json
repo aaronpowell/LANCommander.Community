@@ -12,6 +12,16 @@
       "rootNamespace": "LANCommander.Community.Server.Mcp",
       "packageId": "LANCommander.Mcp",
       "assemblyName": "LANCommander.Mcp",
+      "packageTypes": [
+        "LANCommander.Plugin",
+        "LANCommander.Plugin.Server"
+      ],
+      "packageTags": [
+        "LANCommander",
+        "plugin",
+        "server",
+        "mcp"
+      ],
       "host": "Server",
       "minimumHostVersion": "2.2.0-alpha.4",
       "maximumHostVersion": null,
@@ -28,6 +38,17 @@
       "rootNamespace": "LANCommander.Community.Server.RecompCatalog.Plugin",
       "packageId": "LANCommander.RecompCatalog.Plugin",
       "assemblyName": "LANCommander.RecompCatalog.Plugin",
+      "packageTypes": [
+        "LANCommander.Plugin",
+        "LANCommander.Plugin.Server"
+      ],
+      "packageTags": [
+        "LANCommander",
+        "plugin",
+        "server",
+        "recomp",
+        "catalog"
+      ],
       "host": "Server",
       "minimumHostVersion": "2.2.0-alpha.3",
       "maximumHostVersion": null,
@@ -45,6 +66,8 @@
       "rootNamespace": "LANCommander.Community.Launcher.MQTT",
       "packageId": "LanCommander.HomeAssistant.Plugin",
       "assemblyName": "LanCommander.HomeAssistant.Plugin",
+      "packageTypes": [],
+      "packageTags": [],
       "host": "Launcher",
       "minimumHostVersion": "2.2.0-alpha.4",
       "maximumHostVersion": "2.2.0-alpha.4",
