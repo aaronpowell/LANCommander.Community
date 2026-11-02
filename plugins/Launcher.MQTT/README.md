@@ -2,6 +2,13 @@
 
 A Windows LANCommander GUI Launcher plugin that publishes bounded command/state events over MQTT. Home Assistant is one supported integration; its discovery payloads and sample automation are HA-specific, while the command and state topics can be used by any MQTT client.
 
+The source projects and namespaces use
+`LANCommander.Community.Launcher.MQTT.*`. For compatibility, the deployed
+assembly names, plugin ID, `Plugins/LanCommander.HomeAssistant.Plugin` folder,
+and `homeassistant.json` configuration identity retain their historical names.
+This is the imported 0.2.0 development prototype, not a claim that a release has
+been published.
+
 ## Current prototype (0.2.0)
 
 Open **Launcher settings > Home Assistant MQTT** to configure broker address/port,

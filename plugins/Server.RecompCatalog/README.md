@@ -9,6 +9,10 @@ or endorsed by Quiver or its maintainers. Quiver inspired the workflow, and its 
 catalog feed format and data are compatibility inputs only. The plugin does not bundle,
 mirror, or depend on the Quiver application.
 
+The source projects and namespaces use
+`LANCommander.Community.Server.RecompCatalog.*`. The installable package ID,
+runtime assembly, and plugin ID retain their existing LANCommander identities.
+
 ## Workflow
 
 1. Load a configurable catalog index.
@@ -26,10 +30,11 @@ guarantee: administrators must review upstream projects and release artifacts.
 
 ## Installation
 
-Each `server-recompcatalog-v<SemVer>` tag publishes a component-specific GitHub release with `LANCommander.RecompCatalog.Plugin.<version>.nupkg`
-and a matching `.sha256` file. The plugin needs a LANCommander server build that carries the
-plugin contracts described under [Build](#build) and the
-[host load-context prerequisite](#host-load-context-prerequisite).
+The repository's development version is not a claim that a package has been
+published. See the repository's [plugin release procedure](../../RELEASES.md)
+for the current tag, workflow, and publication behavior. The plugin needs a
+LANCommander server build that carries the plugin contracts described under
+[Build](#build) and the [host load-context prerequisite](#host-load-context-prerequisite).
 
 1. Download the NuGet package and its `.sha256` file from the
    [community releases page](https://github.com/aaronpowell/LANCommander.Community/releases), and
@@ -61,13 +66,10 @@ pwsh .\eng\Build-Plugin.ps1 -Plugin Server.RecompCatalog -Package
 The version comes from `plugins\Server.RecompCatalog\version.txt` and is shared
 with its helper projects and runtime plugin version.
 
-For testing, use a unique prerelease version and upload the resulting package in **Settings →
-Plugins**:
-
-```powershell
-Update `plugins\Server.RecompCatalog\version.txt` and its changelog before
-building a different test version; never reuse an artifact version for different bytes.
-```
+For testing, use a unique prerelease version and upload the resulting package in
+**Settings → Plugins**. Update `plugins\Server.RecompCatalog\version.txt` and its
+changelog before building a different test version; never reuse an artifact
+version for different bytes.
 
 Alternatively, add the absolute `artifacts` directory as a local package source in LANCommander's
 Plugins page. Enable prereleases under **Sources** if the server is not itself a prerelease.
@@ -77,18 +79,12 @@ Standard `dotnet pack` also produces the same package layout; the script adds va
 checksum. Host assemblies are compile-time references, not bundled dependencies.
 
 ```powershell
-dotnet pack LANCommander.Community.Server.RecompCatalog.Plugin\LANCommander.Community.Server.RecompCatalog.Plugin.csproj -c Release -o artifacts
+dotnet pack .\plugins\Server.RecompCatalog\LANCommander.Community.Server.RecompCatalog.Plugin\LANCommander.Community.Server.RecompCatalog.Plugin.csproj -c Release -o artifacts
 ```
 
-CI builds, tests, and validates all components on pull requests. The matching
-component tag uses the version file and attaches only this package and its
-checksums/compatibility manifest to the GitHub release. CI does not push to a NuGet feed. To publish
-to nuget.org or another feed explicitly:
-
-```powershell
-dotnet nuget push artifacts\LANCommander.RecompCatalog.Plugin.0.4.0.nupkg `
-    --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY
-```
+Pull request CI validates all components. This package is distributed as a
+LANCommander plugin through the repository's GitHub Release; it is not
+published to NuGet.org.
 
 ## Build
 
@@ -161,7 +157,7 @@ still require separate acceptance testing against a disposable LANCommander inst
 Run the focused, offline re-import acceptance tests (using the built host assemblies described above):
 
 ```powershell
-dotnet test LANCommander.Community.Server.RecompCatalog.Tests\LANCommander.Community.Server.RecompCatalog.Tests.csproj --filter "FullyQualifiedName~CatalogImportSafetyTests|FullyQualifiedName~CatalogBrowserTests|FullyQualifiedName~PluginServiceRegistrationTests" --nologo --verbosity quiet
+dotnet test .\plugins\Server.RecompCatalog\LANCommander.Community.Server.RecompCatalog.Tests\LANCommander.Community.Server.RecompCatalog.Tests.csproj --filter "FullyQualifiedName~CatalogImportSafetyTests|FullyQualifiedName~CatalogBrowserTests|FullyQualifiedName~PluginServiceRegistrationTests" --nologo --verbosity quiet
 ```
 
 These tests use in-memory host state and importer callbacks; they do not deploy the plugin or

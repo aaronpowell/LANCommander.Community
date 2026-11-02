@@ -4,6 +4,11 @@ A server plugin that exposes LANCommander catalog management over the Model Cont
 Protocol (MCP). It runs **inside LANCommander**, uses its provider contracts and
 authentication, and opens no additional listener.
 
+Its source project and namespace use
+`LANCommander.Community.Server.Mcp`. For compatibility with existing installs,
+the package ID and runtime assembly remain `LANCommander.Mcp`, and the plugin ID
+remains `io.github.aaronpowell.lancommander.mcp`.
+
 ## Requirements
 
 - LANCommander server **2.2.0-alpha.4 or later** with the server plugin framework.
@@ -46,10 +51,10 @@ runtime assembly name, and plugin ID intentionally retain their existing identit
 Do not copy just the main DLL. Use either manual installation or the package
 installer, not both.
 
-The `server-mcp-v<SemVer>` tag builds, tests and attaches only the MCP package
-and its checksums/compatibility manifest to a GitHub release. The workflow does
-not publish to NuGet.org. The published `0.2.0` package is historical and is not
-replaced by the monorepo's `0.2.1` version.
+The published `0.2.0` package is historical and is not replaced by this
+repository's development version `0.2.1`. See the repository's
+[plugin release procedure](../../RELEASES.md) for the current tag, workflow,
+and publication behavior.
 
 ## Connect
 
