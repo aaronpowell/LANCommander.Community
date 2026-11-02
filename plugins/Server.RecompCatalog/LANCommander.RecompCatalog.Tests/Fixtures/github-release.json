@@ -1,0 +1,25 @@
+{
+  "tag_name": "v1.2.3",
+  "name": "Fixture Release",
+  "published_at": "2026-09-30T00:00:00Z",
+  "assets": [
+    {
+      "name": "fixture-portable-win-x64.zip",
+      "browser_download_url": "https://downloads.test/fixture-portable-win-x64.zip",
+      "size": 12345,
+      "content_type": "application/zip"
+    },
+    {
+      "name": "fixture-linux-x64.zip",
+      "browser_download_url": "https://downloads.test/fixture-linux-x64.zip",
+      "size": 12345,
+      "content_type": "application/zip"
+    },
+    {
+      "name": "Source code.zip",
+      "browser_download_url": "https://downloads.test/source.zip",
+      "size": 12345,
+      "content_type": "application/zip"
+    }
+  ]
+}

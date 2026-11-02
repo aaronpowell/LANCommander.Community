@@ -1,0 +1,75 @@
+name: Build and publish one plugin
+
+on:
+  workflow_call:
+    inputs:
+      plugin:
+        required: true
+        type: string
+      tag:
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: plugin-release-${{ inputs.plugin }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag }}
+      - uses: actions/setup-dotnet@d4c94342e560b34958eacfc5d055d21461ed1c5 # v4.3.1
+        with:
+          dotnet-version: 10.0.x
+      - if: inputs.plugin == 'Server.Mcp'
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: 22
+      - if: inputs.plugin == 'Launcher.MQTT'
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - if: inputs.plugin == 'Launcher.MQTT'
+        run: python -m pip install -r plugins/Launcher.MQTT/tests/ha-template-requirements.txt
+      - name: Validate and package the selected component
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_PLUGIN: ${{ inputs.plugin }}
+        run: |
+          $selection = (./eng/Resolve-ReleaseSelection.ps1 -Tag $env:RELEASE_TAG | ConvertFrom-Json)[0]
+          if ($selection.key -cne $env:RELEASE_PLUGIN) { throw 'Release tag selected a different component.' }
+          ./eng/Validate-Plugin.ps1 -Plugin $env:RELEASE_PLUGIN -OutputDirectory (Join-Path $env:RUNNER_TEMP 'plugin-release')
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: plugin-release-${{ inputs.plugin }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/plugin-release/
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ inputs.tag }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: plugin-release-${{ inputs.plugin }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/plugin-release
+      - name: Verify and publish the exact checked artifact bytes
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          RELEASE_PLUGIN: ${{ inputs.plugin }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+        run: ./eng/Publish-Release.ps1 -Plugin $env:RELEASE_PLUGIN -Tag $env:RELEASE_TAG -ArtifactDirectory (Join-Path $env:RUNNER_TEMP 'plugin-release') -Repository $env:RELEASE_REPOSITORY

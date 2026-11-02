@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LANCommander.RecompCatalog.Core\LANCommander.RecompCatalog.Core.csproj" />
+    <ProjectReference Include="..\LANCommander.RecompCatalog.Infrastructure\LANCommander.RecompCatalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\LANCommander.RecompCatalog.Providers\LANCommander.RecompCatalog.Providers.csproj" />
+    <ProjectReference Include="..\LANCommander.RecompCatalog.Plugin\LANCommander.RecompCatalog.Plugin.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LANCommander.SDK" />
+    <PackageReference Include="LANCommander.Server.Plugins" />
+    <PackageReference Include="LANCommander.Server.UI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Fixtures\**\*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

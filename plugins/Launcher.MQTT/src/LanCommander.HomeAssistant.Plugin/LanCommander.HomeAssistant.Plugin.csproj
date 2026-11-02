@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <LanCommanderSourceRoot Condition="'$(LanCommanderSourceRoot)' == ''">$(LANCOMMANDER_SOURCE_ROOT)</LanCommanderSourceRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" PrivateAssets="all" />
+    <ProjectReference Include="..\LanCommander.HomeAssistant.Core\LanCommander.HomeAssistant.Core.csproj" />
+    <ProjectReference Include="..\LanCommander.HomeAssistant.Mqtt\LanCommander.HomeAssistant.Mqtt.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(LanCommanderSourceRoot)' != ''">
+    <ProjectReference Include="$(LanCommanderSourceRoot)\LANCommander.SDK\LANCommander.SDK.csproj" Private="false" PrivateAssets="all" />
+    <ProjectReference Include="$(LanCommanderSourceRoot)\LANCommander.Launcher.Plugins\LANCommander.Launcher.Plugins.csproj" Private="false" PrivateAssets="all" />
+    <ProjectReference Include="$(LanCommanderSourceRoot)\LANCommander.Launcher.Services\LANCommander.Launcher.Services.csproj" Private="false" PrivateAssets="all" />
+    <ProjectReference Include="$(LanCommanderSourceRoot)\LANCommander.Launcher.Models\LANCommander.Launcher.Models.csproj" Private="false" PrivateAssets="all" />
+    <ProjectReference Include="$(LanCommanderSourceRoot)\LANCommander.Launcher.Data\LANCommander.Launcher.Data.csproj" Private="false" PrivateAssets="all" />
+    <ProjectReference Include="$(LanCommanderSourceRoot)\LANCommander.Launcher.Settings\LANCommander.Launcher.Settings.csproj" Private="false" PrivateAssets="all" />
+    <ProjectReference Include="$(LanCommanderSourceRoot)\LANCommander.Packaging\LANCommander.Packaging.csproj" Private="false" PrivateAssets="all" />
+    <ProjectReference Include="$(LanCommanderSourceRoot)\LANCommander.Packaging.Abstractions\LANCommander.Packaging.Abstractions.csproj" Private="false" PrivateAssets="all" />
+  </ItemGroup>
+  <Target Name="RequireLanCommanderSourceRoot" BeforeTargets="PrepareForBuild" Condition="'$(LanCommanderSourceRoot)' == ''">
+    <Error Text="Set LanCommanderSourceRoot (or LANCOMMANDER_SOURCE_ROOT) to a LANCommander v2.2.0-alpha.4 source checkout to compile the host adapter." />
+  </Target>
+  <Target Name="RemoveHostProvidedInterposerRuntime" AfterTargets="Build">
+    <Delete Files="$(TargetDir)LANCommander.Interposer.dll;$(TargetDir)x64\LANCommander.Interposer.dll;$(TargetDir)x64\LANCommander.Interposer.Injector.exe;$(TargetDir)x86\LANCommander.Interposer.dll;$(TargetDir)x86\LANCommander.Interposer.Injector.exe" />
+  </Target>
+  <Target Name="StagePluginPackage" AfterTargets="Build">
+    <PropertyGroup>
+      <PluginPackageDirectory>$(TargetDir)plugin-package\</PluginPackageDirectory>
+    </PropertyGroup>
+    <MakeDir Directories="$(PluginPackageDirectory)" />
+    <Copy
+      SourceFiles="$(TargetPath);$(TargetDir)LanCommander.HomeAssistant.Core.dll;$(TargetDir)LanCommander.HomeAssistant.Mqtt.dll;$(TargetDir)MQTTnet.dll;$(TargetDir)$(AssemblyName).deps.json"
+      DestinationFolder="$(PluginPackageDirectory)"
+      SkipUnchangedFiles="true" />
+    <Copy
+      SourceFiles="$(MSBuildProjectDirectory)\homeassistant.example.json"
+      DestinationFiles="$(PluginPackageDirectory)homeassistant.json"
+      SkipUnchangedFiles="true" />
+  </Target>
+</Project>

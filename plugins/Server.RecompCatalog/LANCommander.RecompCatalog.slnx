@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="LANCommander.RecompCatalog.Core/LANCommander.RecompCatalog.Core.csproj" />
+  <Project Path="LANCommander.RecompCatalog.Infrastructure/LANCommander.RecompCatalog.Infrastructure.csproj" />
+  <Project Path="LANCommander.RecompCatalog.Providers/LANCommander.RecompCatalog.Providers.csproj" />
+  <Project Path="LANCommander.RecompCatalog.Tests/LANCommander.RecompCatalog.Tests.csproj" />
+  <Project Path="LANCommander.RecompCatalog.Plugin/LANCommander.RecompCatalog.Plugin.csproj" />
+</Solution>

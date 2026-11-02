@@ -1,0 +1,1191 @@
+@page "/Plugins/RecompCatalog"
+@attribute [PluginAccess(PluginAccessLevel.Administrator)]
+@implements IAsyncDisposable
+@inject CatalogBrowserService Browser
+@inject RecompCatalogSettings Settings
+@inject ICatalogHostIntegration Host
+@inject CatalogImportWorkflow ImportWorkflow
+
+<PageTitle>Recomp Catalog</PageTitle>
+
+<PageHeader Title="Recomp Catalog" Subtitle="Browse compatible community recompilation feeds">
+    <Extra>
+        <Button Icon="IconType.ArrowClockwise" Disabled="@_importBusy" OnClick="ReloadAsync">
+            Reload
+        </Button>
+    </Extra>
+</PageHeader>
+
+<PageContent>
+    <Alert Info Title="Independent catalog browser">
+        This plugin is independent of Quiver. It consumes a compatible public feed as untrusted
+        remote data and does not bundle a catalog snapshot.
+    </Alert>
+
+    @if (_catalog.Status == CatalogBrowserStatus.Loading)
+    {
+        <Card>
+            <Spin Tip="Loading recomp catalog..." />
+        </Card>
+    }
+    else if (_catalog.Status == CatalogBrowserStatus.Unconfigured)
+    {
+        <Result Warning
+                Title="Catalog feed is not configured"
+                SubTitle="@($"Set {RecompCatalogSettings.FeedConfigurationKey} to an HTTPS catalog index URL, then reload.")" />
+    }
+    else if (_catalog.Status == CatalogBrowserStatus.Failed)
+    {
+        <Alert Danger Title="Catalog load failed">
+            <div>@_catalog.ErrorMessage</div>
+            <Button Small Icon="IconType.ArrowClockwise" OnClick="ReloadAsync" Style="margin-top: 8px">
+                Retry
+            </Button>
+        </Alert>
+    }
+    else if (_catalog.Status == CatalogBrowserStatus.Empty)
+    {
+        <Empty Title="The catalog is empty"
+               Description="The configured feed loaded successfully but did not contain any usable entries." />
+    }
+    else
+    {
+        <Card Title="Filters" Subtitle="@($"{_filtered.Count:N0} of {_catalog.Entries.Count:N0} entries")">
+            <Row Gap="Gap.Medium" VerticalGap="Gap.Medium">
+                <Column Xs="24" Md="12" Lg="8">
+                    <TextInput Icon="IconType.MagnifyingGlass"
+                               Immediate
+                               Value="@_query"
+                               ValueChanged="SearchChanged"
+                               Placeholder="Search title, project, repository, or tag" />
+                </Column>
+                <Column Xs="24" Md="12" Lg="6">
+                    <Select TValue="string"
+                            Items="@TagOptions"
+                            Value="@_tag"
+                            ValueChanged="TagChanged"
+                            Searchable />
+                </Column>
+                <Column Xs="24" Md="12" Lg="5">
+                    <Select TValue="string"
+                            Items="@OriginalPlatformOptions"
+                            Value="@_originalPlatform"
+                            ValueChanged="OriginalPlatformChanged" />
+                </Column>
+                @if (_catalog.TargetPlatforms.Count > 0)
+                {
+                    <Column Xs="24" Md="12" Lg="5">
+                        <Select TValue="string"
+                                Items="@TargetPlatformOptions"
+                                Value="@_targetPlatform"
+                                ValueChanged="TargetPlatformChanged" />
+                    </Column>
+                }
+                <Column Xs="24" Md="12" Lg="5">
+                    <Select TValue="string"
+                            Items="@ImportStateOptions"
+                            Value="@_importState"
+                            ValueChanged="ImportStateChanged" />
+                </Column>
+            </Row>
+        </Card>
+
+        @if (_filtered.Count == 0)
+        {
+            <Empty Title="No matching recomp projects"
+                   Description="Clear or change the current search and filters." />
+        }
+        else
+        {
+            <Row Gap="Gap.Medium" VerticalGap="Gap.Medium">
+                <Column Xs="24" Lg="14">
+                    <Card Title="Catalog entries" Count="@_filtered.Count">
+                        @foreach (var entry in _filtered)
+                        {
+                            <Card Small Borderless
+                                  Title="@entry.DisplayName"
+                                  Subtitle="@entry.CatalogEntry.Repository"
+                                  Style="margin-bottom: 8px">
+                                <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px">
+                                    <Tag Caps Small>@entry.OriginalPlatform</Tag>
+                                    <Tag Small>@StateLabel(entry.ImportState.Status)</Tag>
+                                    @foreach (var tag in entry.CatalogEntry.Tags.Take(6))
+                                    {
+                                        <Tag>@tag</Tag>
+                                    }
+                                </div>
+                                <Button Small
+                                        Disabled="@_importBusy"
+                                        Primary="@(ReferenceEquals(_selected, entry))"
+                                        OnClick="() => SelectEntry(entry)">
+                                    View details
+                                </Button>
+                            </Card>
+                        }
+                    </Card>
+                </Column>
+
+                <Column Xs="24" Lg="10">
+                    @if (_selected is null)
+                    {
+                        <Card Title="Project details">
+                            <Empty Small
+                                   Title="Select a project"
+                                   Description="Choose a catalog entry to inspect its provenance and release preview." />
+                        </Card>
+                    }
+                    else
+                    {
+                        <Card Title="@_selected.DisplayName" Subtitle="@_selected.CatalogEntry.Project">
+                            <dl>
+                                <dt>Original platform</dt>
+                                <dd>@_selected.OriginalPlatform</dd>
+
+                                <dt>Target platforms</dt>
+                                <dd>@DisplayTargets(_selected)</dd>
+
+                                <dt>Repository provider</dt>
+                                <dd>@RepositoryProvider(_selected)</dd>
+
+                                <dt>Repository</dt>
+                                <dd><Typography Code>@_selected.CatalogEntry.Repository</Typography></dd>
+
+                                <dt>Feed provenance</dt>
+                                <dd><Typography Code>@_selected.SourceLocation</Typography></dd>
+
+                                <dt>Release asset filter</dt>
+                                <dd>@(_selected.CatalogEntry.ReleaseAssetFilter ?? "None")</dd>
+
+                                <dt>Import status</dt>
+                                <dd>@StateLabel(_selected.ImportState.Status)</dd>
+
+                                @if (_selected.ImportState.Imported is not null)
+                                {
+                                    <dt>LANCommander game</dt>
+                                    <dd>@_selected.ImportState.Imported.GameTitle</dd>
+
+                                    <dt>Imported release</dt>
+                                    <dd>@DisplayImportedRelease(_selected.ImportState.Imported)</dd>
+                                }
+                            </dl>
+
+                            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                                @if (_selected.RepositoryUrl is not null)
+                                {
+                                    <Button Href="@_selected.RepositoryUrl.ToString()"
+                                            NewTab
+                                            Icon="IconType.GithubLogo">
+                                        Open repository
+                                    </Button>
+                                }
+                                <Button Primary
+                                        Icon="IconType.Package"
+                                        Disabled="@(_importBusy || !_selected.CatalogEntry.IsGitHub)"
+                                        Loading="@(_preview?.Status == ImportPreviewStatus.Loading)"
+                                        OnClick="OpenPreviewAsync">
+                                    Check release and prepare
+                                </Button>
+                                @if (_selected.ImportState.Imported is not null)
+                                {
+                                    <Button Icon="IconType.Cpu"
+                                            Disabled="@_importBusy"
+                                            OnClick="() => _manageRom = !_manageRom">
+                                        @(_manageRom ? "Hide ROM" : "Manage ROM")
+                                    </Button>
+                                }
+                            </div>
+
+                            @if (_manageRom && _selected.ImportState.Imported is { } managed)
+                            {
+                                <RomManager GameId="@managed.GameId"
+                                            GameTitle="@managed.GameTitle"
+                                            DefaultDirectory="@RomPlacement.DirectoryForExecutable(managed.UpdatePolicy?.ExecutablePath)"
+                                            Disabled="@_importBusy" />
+                            }
+
+                            @if (!_selected.CatalogEntry.IsGitHub)
+                            {
+                                <Alert Warning Title="Preview unavailable" Style="margin-top: 12px">
+                                    Release preview currently supports GitHub repositories only.
+                                </Alert>
+                            }
+                        </Card>
+
+                        @if (_preview is not null)
+                        {
+                            <Card Title="Import preview" Subtitle="No binaries have been downloaded" Style="margin-top: 16px">
+                                @if (_preview.Status == ImportPreviewStatus.Loading)
+                                {
+                                    <Spin Tip="Resolving the latest release metadata..." />
+                                }
+                                else if (_preview.Status is ImportPreviewStatus.Failed or ImportPreviewStatus.Unsupported)
+                                {
+                                    <Alert Danger Title="Release preview failed">
+                                        @_preview.Message
+                                    </Alert>
+                                }
+                                else if (_preview.Release is not null)
+                                {
+                                    <dl>
+                                        <dt>Release</dt>
+                                        <dd>@_preview.Release.Name</dd>
+
+                                        <dt>Tag</dt>
+                                        <dd><Typography Code>@_preview.Release.Tag</Typography></dd>
+
+                                        <dt>Published</dt>
+                                        <dd>@DisplayDate(_preview.Release.PublishedAt)</dd>
+
+                                        <dt>Selectable Windows assets</dt>
+                                        <dd>@_preview.Release.Assets.Count</dd>
+                                    </dl>
+
+                                    @foreach (var asset in _preview.Release.Assets)
+                                    {
+                                        var assessment = AssessAsset(asset);
+                                        <Card Small Borderless
+                                              Title="@asset.Name"
+                                              Subtitle="@FormatSize(asset.Size)"
+                                              Style="margin-bottom: 8px">
+                                            @if (!assessment.CanImport)
+                                            {
+                                                <Alert Warning Title="@(assessment.Disposition == CatalogImportDisposition.UpdateAvailable ? "Update available - replacement blocked" : "Re-import safety")">
+                                                    @assessment.Message
+                                                </Alert>
+                                            }
+                                            <Button Small
+                                                    Primary
+                                                    Disabled="@(_importBusy || !assessment.CanImport)"
+                                                    OnClick="() => BeginPreparation(asset)">
+                                                Prepare this asset
+                                            </Button>
+                                        </Card>
+                                    }
+
+                                    @if (_preparation is not null)
+                                    {
+                                        <Card Title="Import preparation" Subtitle="Catalog and release provenance are retained" Style="margin-top: 12px">
+                                            <dl>
+                                                <dt>Canonical catalog identity</dt>
+                                                <dd><Typography Code>@_preparation.Provenance.Catalog.Value</Typography></dd>
+
+                                                <dt>Exact release</dt>
+                                                <dd><Typography Code>@_preparation.Provenance.Release?.Value</Typography></dd>
+
+                                                <dt>Selected asset</dt>
+                                                <dd>@_preparation.Asset.Name</dd>
+                                            </dl>
+
+                                            @if (_metadataProviders.Count == 0)
+                                            {
+                                                <Alert Warning Title="Metadata lookup is unavailable">
+                                                    LANCommander has no configured metadata providers. Configure a provider
+                                                    in the server, then restart or reload this page.
+                                                </Alert>
+                                            }
+                                            else
+                                            {
+                                                <Row Gap="Gap.Medium" VerticalGap="Gap.Medium">
+                                                    <Column Xs="24" Md="8">
+                                                        <Select TValue="string"
+                                                                Items="@MetadataProviderOptions"
+                                                                Value="@_metadataProvider"
+                                                                ValueChanged="MetadataProviderChanged" />
+                                                    </Column>
+                                                    <Column Xs="24" Md="12">
+                                                        <TextInput Value="@_metadataQuery"
+                                                                   ValueChanged="value => _metadataQuery = value"
+                                                                   Placeholder="Search LANCommander metadata providers" />
+                                                    </Column>
+                                                    <Column Xs="24" Md="4">
+                                                        <Button Primary
+                                                                Loading="@_metadataLoading"
+                                                                Disabled="@string.IsNullOrWhiteSpace(_metadataProvider)"
+                                                                OnClick="SearchMetadataAsync">
+                                                            Lookup
+                                                        </Button>
+                                                    </Column>
+                                                </Row>
+
+                                                @if (!string.IsNullOrWhiteSpace(_metadataError))
+                                                {
+                                                    <Alert Danger Title="Metadata lookup failed">
+                                                        @_metadataError
+                                                    </Alert>
+                                                }
+
+                                                @if (_metadataSearched
+                                                    && !_metadataLoading
+                                                    && _metadataResults.Count == 0
+                                                    && string.IsNullOrWhiteSpace(_metadataError))
+                                                {
+                                                    <Alert Info Title="No metadata matches found">
+                                                        @_metadataProvider returned no matches for
+                                                        "@_metadataSearchedQuery". Try a shorter or more general title, or
+                                                        fill the metadata in by hand below.
+                                                    </Alert>
+                                                }
+
+                                                @foreach (var result in _metadataResults)
+                                                {
+                                                    <Card Small Borderless
+                                                          Title="@result.Title"
+                                                          Subtitle="@result.Provider"
+                                                          Style="margin-top: 8px">
+                                                        <Button Small
+                                                                Loading="@_metadataLoading"
+                                                                OnClick="() => SelectMetadataAsync(result)">
+                                                            Preview lookup result
+                                                        </Button>
+                                                    </Card>
+                                                }
+
+                                                @if (_lookupCandidate is not null)
+                                                {
+                                                    <Card Small Title="Lookup result" Subtitle="@($"{_lookupCandidate.Provider} - {_lookupCandidate.Title}")" Style="margin-top: 12px">
+                                                        <Alert Info Title="Applying replaces the editable draft">
+                                                            Lookup values are never written into the draft automatically, so
+                                                            your edits are never silently overwritten. Apply them when you
+                                                            want this result to replace what is in the draft below.
+                                                        </Alert>
+                                                        <Button Small Primary OnClick="ApplyLookupMetadata">Apply to draft</Button>
+                                                        <Button Small OnClick="DismissLookupCandidate">Discard result</Button>
+                                                    </Card>
+                                                }
+                                            }
+
+                                            @if (_preparation.Metadata is not null)
+                                            {
+                                                <Card Small Title="Editable metadata" Subtitle="Every field can be edited before import, with or without a lookup" Style="margin-top: 12px">
+                                                    <Row Gap="Gap.Medium" VerticalGap="Gap.Medium">
+                                                        <Column Xs="24" Md="12">
+                                                            <FormItem Label="Title">
+                                                                <TextInput Immediate
+                                                                           Value="@_preparation.Metadata.Title"
+                                                                           ValueChanged="value => EditMetadataDraft(draft => draft with { Title = value ?? string.Empty })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24" Md="12">
+                                                            <FormItem Label="Released">
+                                                                <DatePicker TValue="DateTime?"
+                                                                            Clearable
+                                                                            Format="yyyy-MM-dd"
+                                                                            Value="@_preparation.Metadata.ReleasedOn"
+                                                                            ValueChanged="value => EditMetadataDraft(draft => draft with { ReleasedOn = value })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24">
+                                                            <FormItem Label="Description">
+                                                                <TextArea Immediate
+                                                                          Rows="4"
+                                                                          Value="@_preparation.Metadata.Description"
+                                                                          ValueChanged="value => EditMetadataDraft(draft => draft with { Description = value })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24" Md="12">
+                                                            <FormItem Label="Engine">
+                                                                <TextInput Immediate
+                                                                           Value="@_preparation.Metadata.Engine"
+                                                                           ValueChanged="value => EditMetadataDraft(draft => draft with { Engine = value })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24" Md="12">
+                                                            <FormItem Label="Singleplayer">
+                                                                <Checkbox Value="@_preparation.Metadata.Singleplayer"
+                                                                          ValueChanged="value => EditMetadataDraft(draft => draft with { Singleplayer = value })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24" Md="12">
+                                                            <FormItem Label="Developers" Help="Separate several values with commas.">
+                                                                <TextInput Immediate
+                                                                           Placeholder="Comma separated"
+                                                                           Value="@_preparation.Metadata.Developers"
+                                                                           ValueChanged="value => EditMetadataDraft(draft => draft with { Developers = value ?? string.Empty })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24" Md="12">
+                                                            <FormItem Label="Publishers" Help="Separate several values with commas.">
+                                                                <TextInput Immediate
+                                                                           Placeholder="Comma separated"
+                                                                           Value="@_preparation.Metadata.Publishers"
+                                                                           ValueChanged="value => EditMetadataDraft(draft => draft with { Publishers = value ?? string.Empty })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24" Md="12">
+                                                            <FormItem Label="Genres" Help="Separate several values with commas.">
+                                                                <TextInput Immediate
+                                                                           Placeholder="Comma separated"
+                                                                           Value="@_preparation.Metadata.Genres"
+                                                                           ValueChanged="value => EditMetadataDraft(draft => draft with { Genres = value ?? string.Empty })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24" Md="12">
+                                                            <FormItem Label="Tags" Help="Separate several values with commas.">
+                                                                <TextInput Immediate
+                                                                           Placeholder="Comma separated"
+                                                                           Value="@_preparation.Metadata.Tags"
+                                                                           ValueChanged="value => EditMetadataDraft(draft => draft with { Tags = value ?? string.Empty })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                        <Column Xs="24">
+                                                            <FormItem Label="External IDs" Help="Separate several values with commas.">
+                                                                <TextInput Immediate
+                                                                           Placeholder="Comma separated"
+                                                                           Value="@_preparation.Metadata.ExternalIds"
+                                                                           ValueChanged="value => EditMetadataDraft(draft => draft with { ExternalIds = value ?? string.Empty })" />
+                                                            </FormItem>
+                                                        </Column>
+                                                    </Row>
+
+                                                    @if (_metadataEdited)
+                                                    {
+                                                        <Alert Info Title="Draft edited">
+                                                            This draft contains your edits. A new lookup result will not
+                                                            replace them unless you apply it.
+                                                        </Alert>
+                                                    }
+                                                </Card>
+                                            }
+
+                                            @if (!string.IsNullOrWhiteSpace(_importError))
+                                            {
+                                                <Alert Danger Title="Import preparation failed">
+                                                    @_importError
+                                                </Alert>
+                                            }
+
+                                            @if (_importResult is not null)
+                                            {
+                                                @if (_importResult.AlreadyImported)
+                                                {
+                                                    <Alert Info Title="Already imported - no changes">
+                                                        This exact release and asset are already present as game
+                                                        <Typography Code>@_importResult.GameId</Typography>.
+                                                        Existing archives and locally edited metadata were left unchanged.
+                                                    </Alert>
+                                                }
+                                                else
+                                                {
+                                                    <Alert Success Title="Game imported">
+                                                        LANCommander imported @_importResult.ImportedCount record(s) as game
+                                                        <Typography Code>@_importResult.GameId</Typography>.
+                                                    </Alert>
+                                                }
+                                                @if (_romWarning is not null)
+                                                {
+                                                    <Alert Warning Title="ROM not attached">@_romWarning</Alert>
+                                                }
+                                            }
+                                            else if (_preparedArtifact is null)
+                                            {
+                                                <Alert Warning Title="The release asset will be treated as untrusted">
+                                                    LANCommander will download the selected release, enforce archive size
+                                                    and path safety limits, normalize it without executing anything, and
+                                                    then ask you to choose the executable before import.
+                                                </Alert>
+                                                <Button Primary
+                                                        Loading="@_importBusy"
+                                                        Disabled="@_importBusy"
+                                                        OnClick="PrepareArtifactAsync">
+                                                    Download and inspect asset
+                                                </Button>
+                                            }
+                                            else
+                                            {
+                                                <Card Small
+                                                      Title="Normalized release"
+                                                      Subtitle="@($"{_preparedArtifact.Artifact.Executables.Count} executable candidate(s), {FormatSize(_preparedArtifact.Artifact.UncompressedSize)} expanded")"
+                                                      Style="margin-top: 12px">
+                                                    <FormItem Label="Primary executable">
+                                                        <Select TValue="string"
+                                                                Items="@ExecutableOptions"
+                                                                Value="@_selectedExecutable"
+                                                                ValueChanged="value => _selectedExecutable = value" />
+                                                    </FormItem>
+                                                    <Typography Code>@_preparedArtifact.Artifact.Sha256</Typography>
+                                                </Card>
+
+                                                <RomManager @ref="_importRom"
+                                                            DefaultDirectory="@RomPlacement.DirectoryForExecutable(_selectedExecutable)"
+                                                            GameTitle="@(_preparation?.Metadata?.Title ?? string.Empty)"
+                                                            Disabled="@_importBusy" />
+
+                                                <Button Primary
+                                                        Loading="@_importBusy"
+                                                        Disabled="@(_importBusy || string.IsNullOrWhiteSpace(_selectedExecutable))"
+                                                        OnClick="ImportPreparedAsync">
+                                                    Import into LANCommander
+                                                </Button>
+                                                <Button Disabled="@_importBusy" OnClick="DiscardPreparedArtifact">
+                                                    Discard downloaded asset
+                                                </Button>
+                                            }
+
+                                            @if (_importBusy)
+                                            {
+                                                <Alert Info Title="Import in progress">
+                                                    @DisplayValue(_importProgress)
+                                                    <Button Small OnClick="CancelImport">Cancel</Button>
+                                                </Alert>
+                                            }
+                                        </Card>
+                                    }
+                                }
+                            </Card>
+                        }
+                    }
+                </Column>
+            </Row>
+        }
+    }
+</PageContent>
+
+@code {
+    readonly CancellationTokenSource _lifetime = new();
+    CancellationTokenSource? _operation;
+    CatalogBrowserResult _catalog = new(
+        CatalogBrowserStatus.Loading,
+        null,
+        [],
+        [],
+        [],
+        []);
+    IReadOnlyList<CatalogBrowserEntry> _filtered = [];
+    CatalogBrowserEntry? _selected;
+    ImportPreview? _preview;
+    ImportPreparation? _preparation;
+    IReadOnlyList<string> _metadataProviders = [];
+    IReadOnlyList<MetadataLookupResult> _metadataResults = [];
+    MetadataLookupResult? _lookupCandidate;
+    PreparedImportArtifact? _preparedArtifact;
+    CatalogImportResult? _importResult;
+    CancellationTokenSource? _importOperation;
+    string _selectedExecutable = "";
+    RomManager? _importRom;
+    bool _manageRom;
+    string? _romWarning;
+    string? _importProgress;
+    string? _importError;
+    bool _importBusy;
+    string _metadataProvider = "";
+    string _metadataQuery = "";
+    string? _metadataSearchedQuery;
+    string? _metadataError;
+    bool _metadataLoading;
+    bool _metadataSearched;
+    bool _metadataEdited;
+    string _query = "";
+    string _tag = "";
+    string _originalPlatform = "";
+    string _targetPlatform = "";
+    string _importState = "";
+
+    IEnumerable<SelectItem<string>> TagOptions =>
+        Options("All tags", _catalog.Tags);
+
+    IEnumerable<SelectItem<string>> OriginalPlatformOptions =>
+        Options("All original platforms", _catalog.OriginalPlatforms);
+
+    IEnumerable<SelectItem<string>> TargetPlatformOptions =>
+        Options("All target platforms", _catalog.TargetPlatforms);
+
+    IEnumerable<SelectItem<string>> ImportStateOptions =>
+    [
+        new("", "All import states"),
+        .. Enum.GetValues<CatalogEntryState>()
+            .Select(state => new SelectItem<string>(state.ToString(), StateLabel(state))),
+    ];
+
+    IEnumerable<SelectItem<string>> MetadataProviderOptions =>
+        Options("Choose provider", _metadataProviders);
+
+    IEnumerable<SelectItem<string>> ExecutableOptions =>
+        Options("Choose executable", _preparedArtifact?.Artifact.Executables ?? []);
+
+    protected override Task OnInitializedAsync() => ReloadAsync();
+
+    async Task ReloadAsync()
+    {
+        var operation = BeginOperation();
+        _catalog = new CatalogBrowserResult(
+            CatalogBrowserStatus.Loading,
+            null,
+            [],
+            [],
+            [],
+            []);
+        _selected = null;
+        _preview = null;
+
+        try
+        {
+            _catalog = await Browser.LoadAsync(Settings.FeedUrl, operation.Token);
+            if (_catalog.Status == CatalogBrowserStatus.Ready)
+                await LoadImportedStatesAsync(operation.Token);
+            ClampFacetFilters();
+            ApplyFilter();
+        }
+        catch (OperationCanceledException) when (operation.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            CompleteOperation(operation);
+        }
+    }
+
+    void SearchChanged(string value)
+    {
+        _query = value;
+        ApplyFilter();
+    }
+
+    void TagChanged(string value)
+    {
+        _tag = value;
+        ApplyFilter();
+    }
+
+    void OriginalPlatformChanged(string value)
+    {
+        _originalPlatform = value;
+        ApplyFilter();
+    }
+
+    void TargetPlatformChanged(string value)
+    {
+        _targetPlatform = value;
+        ApplyFilter();
+    }
+
+    void ImportStateChanged(string value)
+    {
+        _importState = value;
+        ApplyFilter();
+    }
+
+    void ApplyFilter()
+    {
+        _filtered = CatalogBrowserService.ApplyFilter(
+            _catalog.Entries,
+            new CatalogBrowserFilter(
+                _query,
+                _tag,
+                _originalPlatform,
+                _targetPlatform,
+                Enum.TryParse<CatalogEntryState>(_importState, out var state) ? state : null));
+
+        if (_selected is not null && !_filtered.Contains(_selected))
+        {
+            _operation?.Cancel();
+            _selected = null;
+            _preview = null;
+        }
+    }
+
+    void SelectEntry(CatalogBrowserEntry entry)
+    {
+        _operation?.Cancel();
+        _selected = entry;
+        _preview = null;
+        _manageRom = false;
+        ResetPreparation();
+    }
+
+    async Task OpenPreviewAsync()
+    {
+        if (_selected is null)
+            return;
+
+        var entry = _selected;
+        ResetPreparation();
+        var operation = BeginOperation();
+        _preview = new ImportPreview(ImportPreviewStatus.Loading, entry);
+
+        try
+        {
+            var preview = await Browser.PreviewImportAsync(entry, operation.Token);
+            if (ReferenceEquals(_selected, entry))
+            {
+                _preview = preview;
+                ApplyReleaseCheck(entry, preview);
+            }
+        }
+        catch (OperationCanceledException) when (operation.IsCancellationRequested)
+        {
+        }
+        finally
+        {
+            CompleteOperation(operation);
+        }
+    }
+
+    async Task LoadImportedStatesAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                var states = await Host.LoadImportedStatesAsync(_catalog.Entries, cancellationToken);
+                _catalog = _catalog with
+                {
+                    Entries = _catalog.Entries
+                        .Select(entry => entry with
+                        {
+                            ImportState = states.TryGetValue(entry.Id, out var state)
+                                ? state
+                                : CatalogEntryStateClassifier.Classify(
+                                    null, failure: "LANCommander returned no state for this entry."),
+                        })
+                        .ToList(),
+                };
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _catalog = _catalog with
+                {
+                    Entries = _catalog.Entries
+                        .Select(entry => entry with
+                        {
+                            ImportState = CatalogEntryStateClassifier.Classify(
+                                null,
+                                failure: ex.Message),
+                        })
+                        .ToList(),
+                };
+            }
+        }
+
+        void ApplyReleaseCheck(CatalogBrowserEntry entry, ImportPreview preview)
+        {
+            if (entry.ImportState.Imported is null)
+                return;
+
+            CatalogEntryStateView state;
+            if (preview.Status == ImportPreviewStatus.Ready && preview.Release is not null)
+            {
+                var selectedAssetName = entry.ImportState.Imported.UpdatePolicy?.SelectedAssetName;
+                var asset = preview.Release.Assets.FirstOrDefault(candidate =>
+                        candidate.Name.Equals(selectedAssetName, StringComparison.OrdinalIgnoreCase))
+                    ?? preview.Release.Assets.First();
+                state = CatalogEntryStateClassifier.Classify(
+                    entry.ImportState.Imported,
+                    ReleaseIdentity.Create(entry.Identity, preview.Release, asset));
+            }
+            else
+            {
+                state = CatalogEntryStateClassifier.Classify(
+                    entry.ImportState.Imported,
+                    failure: preview.Message ?? "Release state could not be checked.");
+            }
+
+            UpdateEntryState(entry, state);
+        }
+
+        void UpdateEntryState(CatalogBrowserEntry entry, CatalogEntryStateView state)
+        {
+            var updated = entry with { ImportState = state };
+            _catalog = _catalog with
+            {
+                Entries = _catalog.Entries
+                    .Select(candidate => candidate.Id == entry.Id ? updated : candidate)
+                    .ToList(),
+            };
+            _selected = updated;
+            ApplyFilter();
+        }
+
+        CatalogImportAssessment AssessAsset(ReleaseAsset asset) =>
+            CatalogImportSafety.Assess(
+                _selected!.ImportState,
+                ReleaseIdentity.Create(_selected.Identity, _preview!.Release!, asset));
+
+        void BeginPreparation(ReleaseAsset asset)
+        {
+            if (_importBusy || _selected is null || _preview?.Release is null)
+                return;
+
+            var assessment = AssessAsset(asset);
+            if (!assessment.CanImport)
+            {
+                _importError = assessment.Message;
+                return;
+            }
+
+            DiscardPreparedArtifact();
+            var release = _preview.Release;
+            var releaseIdentity = ReleaseIdentity.Create(_selected.Identity, release, asset);
+            var policy = new PackageUpdatePolicy(
+                _selected.Identity.RepositoryProvider,
+                _selected.Identity.Repository,
+                _selected.CatalogEntry.ReleaseAssetFilter,
+                asset.Name,
+                Path.GetExtension(asset.Name).TrimStart('.').ToLowerInvariant(),
+                true);
+            var provenance = new CatalogImportProvenance(
+                StableId.Create(
+                    $"game:{_selected.CatalogEntry.Repository.ToLowerInvariant()}:{_selected.CatalogEntry.Name}"),
+                _selected.CatalogEntry.Name,
+                _selected.Identity,
+                release.Tag,
+                releaseIdentity,
+                policy);
+
+            _preparation = new ImportPreparation(
+                _selected,
+                release,
+                asset,
+                provenance,
+                EditableMetadataDraft.SeedFromCatalog(_selected.CatalogEntry, fallbackTitle: _selected.DisplayName));
+            _metadataProviders = Host.GetMetadataProviders();
+            _metadataProvider = _metadataProviders.FirstOrDefault() ?? "";
+            _metadataQuery = _selected.CatalogEntry.Name;
+            _metadataResults = [];
+            _metadataError = null;
+            _metadataEdited = false;
+            _lookupCandidate = null;
+            _importResult = null;
+            _importError = null;
+        }
+
+        async Task SearchMetadataAsync()
+        {
+            if (string.IsNullOrWhiteSpace(_metadataProvider)
+                || string.IsNullOrWhiteSpace(_metadataQuery))
+                return;
+
+            _metadataLoading = true;
+            _metadataError = null;
+            _metadataResults = [];
+            _lookupCandidate = null;
+            _metadataSearched = true;
+            _metadataSearchedQuery = _metadataQuery;
+            try
+            {
+                _metadataResults = await Host.SearchMetadataAsync(
+                    _metadataProvider,
+                    _metadataQuery,
+                    _lifetime.Token);
+            }
+            catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+            {
+            }
+            catch (Exception ex)
+            {
+                _metadataError = ex.Message;
+            }
+            finally
+            {
+                _metadataLoading = false;
+            }
+        }
+
+        async Task SelectMetadataAsync(MetadataLookupResult result)
+        {
+            if (_preparation is null)
+                return;
+
+            _metadataLoading = true;
+            _metadataError = null;
+            try
+            {
+                var metadata = await Host.GetMetadataAsync(
+                    result.Provider,
+                    result.ProviderGameId,
+                    _lifetime.Token);
+                if (metadata is null)
+                {
+                    _metadataError = "The metadata provider returned no game details.";
+                    _lookupCandidate = null;
+                    return;
+                }
+
+                _lookupCandidate = metadata;
+            }
+            catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+            {
+            }
+            catch (Exception ex)
+            {
+                _metadataError = ex.Message;
+                _lookupCandidate = null;
+            }
+            finally
+            {
+                _metadataLoading = false;
+            }
+        }
+
+    void ApplyLookupMetadata()
+    {
+        if (_preparation is null || _lookupCandidate is null)
+            return;
+
+        _preparation = ImportPreparationMerger.ApplyMetadata(_preparation, _lookupCandidate);
+        _metadataEdited = true;
+        _lookupCandidate = null;
+    }
+
+    void DismissLookupCandidate()
+    {
+        _lookupCandidate = null;
+    }
+
+    void EditMetadataDraft(Func<EditableMetadataDraft, EditableMetadataDraft> update)
+    {
+        if (_preparation is null || _preparation.Metadata is null)
+            return;
+
+        _preparation = ImportPreparationMerger.UpdateMetadataDraft(
+            _preparation,
+            update(_preparation.Metadata));
+        _metadataEdited = true;
+        _lookupCandidate = null;
+    }
+
+    async Task PrepareArtifactAsync()
+    {
+        if (_preparation is null)
+            return;
+
+        _importOperation?.Cancel();
+        _importOperation?.Dispose();
+        _importOperation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _importBusy = true;
+        _importError = null;
+        _importProgress = "Starting download...";
+        _importResult = null;
+
+        try
+        {
+            var progress = new Progress<string>(message =>
+            {
+                _importProgress = message;
+                _ = InvokeAsync(StateHasChanged);
+            });
+            _preparedArtifact = await ImportWorkflow.PrepareAsync(
+                _preparation,
+                progress,
+                _importOperation.Token);
+            _selectedExecutable = _preparedArtifact.Artifact.Executables.Count == 1
+                ? _preparedArtifact.Artifact.Executables[0]
+                : "";
+            _importProgress = "Release normalized. Choose the primary executable.";
+        }
+        catch (OperationCanceledException) when (_importOperation?.IsCancellationRequested == true)
+        {
+            _importProgress = "Import preparation cancelled.";
+        }
+        catch (Exception ex)
+        {
+            _importError = ex.Message;
+        }
+        finally
+        {
+            _importBusy = false;
+        }
+    }
+
+    async Task ImportPreparedAsync()
+    {
+        if (_preparation is null
+            || _preparedArtifact is null
+            || string.IsNullOrWhiteSpace(_selectedExecutable))
+        {
+            return;
+        }
+
+        _importOperation?.Cancel();
+        _importOperation?.Dispose();
+        _importOperation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        _importBusy = true;
+        _importError = null;
+        _romWarning = null;
+        _importProgress = "Building package...";
+
+        if (_importRom?.ValidationError is { } romValidation)
+        {
+            _importBusy = false;
+            _importProgress = null;
+            _importError = $"Fix the ROM step or choose No ROM: {romValidation}";
+            return;
+        }
+
+        try
+        {
+            var progress = new InlineProgress<string>(message =>
+            {
+                _importProgress = message;
+                _ = InvokeAsync(StateHasChanged);
+            });
+            _importResult = await ImportWorkflow.ImportAsync(
+                _preparation,
+                _preparedArtifact,
+                _selectedExecutable,
+                progress,
+                _importOperation.Token);
+            _preparation = _preparation with { Provenance = _importResult.Provenance };
+            UpdateEntryState(
+                _preparation.Entry,
+                CatalogEntryStateClassifier.Classify(
+                    _importResult.Provenance,
+                    _preparation.Provenance.Release));
+            _importProgress = _importResult.AlreadyImported
+                ? "Already imported. No changes were made."
+                : "Import complete.";
+            if (_importRom?.HasSelection == true)
+            {
+                var romError = await _importRom.ApplyAsync(_importResult.GameId, progress, _importOperation.Token);
+                _romWarning = romError is null
+                    ? null
+                    : $"The game was imported but the ROM was not attached: {romError} Use Manage ROM to try again.";
+                _importProgress = romError is null ? $"{_importProgress} ROM attached." : _importProgress;
+            }
+            var cleanupError = CatalogImportWorkflow.Cleanup(_preparedArtifact);
+            if (!string.IsNullOrWhiteSpace(cleanupError))
+            {
+                _importError = $"Temporary files could not be removed: {cleanupError}";
+            }
+            _preparedArtifact = null;
+            _selectedExecutable = "";
+        }
+        catch (OperationCanceledException) when (_importOperation?.IsCancellationRequested == true)
+        {
+            _importProgress = "Import cancelled.";
+        }
+        catch (Exception ex)
+        {
+            _importError = ex.Message;
+        }
+        finally
+        {
+            _importBusy = false;
+        }
+    }
+
+    void CancelImport() => _importOperation?.Cancel();
+
+    void DiscardPreparedArtifact()
+    {
+        if (_importBusy)
+            return;
+
+        var cleanupError = CatalogImportWorkflow.Cleanup(_preparedArtifact);
+        _preparedArtifact = null;
+        _selectedExecutable = "";
+        _importProgress = null;
+        _importError = string.IsNullOrWhiteSpace(cleanupError)
+            ? null
+            : $"Temporary files could not be removed: {cleanupError}";
+    }
+
+        void MetadataProviderChanged(string value)
+        {
+            _metadataProvider = value;
+            _metadataResults = [];
+            _metadataError = null;
+            _metadataSearched = false;
+            _metadataSearchedQuery = null;
+            _lookupCandidate = null;
+        }
+
+        void ResetPreparation()
+        {
+            DiscardPreparedArtifact();
+            _preparation = null;
+            _metadataProviders = [];
+            _metadataResults = [];
+            _metadataProvider = "";
+            _metadataQuery = "";
+            _metadataError = null;
+            _metadataSearched = false;
+            _metadataSearchedQuery = null;
+            _metadataEdited = false;
+            _lookupCandidate = null;
+            _importResult = null;
+            _romWarning = null;
+        }
+
+    CancellationTokenSource BeginOperation()
+    {
+        _operation?.Cancel();
+        _operation = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token);
+        return _operation;
+    }
+
+    void CompleteOperation(CancellationTokenSource operation)
+    {
+        if (ReferenceEquals(_operation, operation))
+            _operation = null;
+
+        operation.Dispose();
+    }
+
+    void ClampFacetFilters()
+    {
+        if (!_catalog.Tags.Contains(_tag, StringComparer.OrdinalIgnoreCase))
+            _tag = "";
+        if (!_catalog.OriginalPlatforms.Contains(_originalPlatform, StringComparer.OrdinalIgnoreCase))
+            _originalPlatform = "";
+        if (!_catalog.TargetPlatforms.Contains(_targetPlatform, StringComparer.OrdinalIgnoreCase))
+            _targetPlatform = "";
+        if (!Enum.TryParse<CatalogEntryState>(_importState, out _))
+            _importState = "";
+    }
+
+    static IEnumerable<SelectItem<string>> Options(
+        string allLabel,
+        IEnumerable<string> values) =>
+        [new SelectItem<string>("", allLabel), .. values.Select(value => new SelectItem<string>(value, value))];
+
+    static string DisplayTargets(CatalogBrowserEntry entry) =>
+        entry.TargetPlatforms.Count == 0
+            ? "Not declared by feed"
+            : string.Join(", ", entry.TargetPlatforms);
+
+    static string RepositoryProvider(CatalogBrowserEntry entry) =>
+        string.IsNullOrWhiteSpace(entry.CatalogEntry.RepositorySource)
+            ? "GitHub"
+            : entry.CatalogEntry.RepositorySource;
+
+    static string DisplayDate(DateTimeOffset? date) =>
+        date?.UtcDateTime.ToString("yyyy-MM-dd HH:mm 'UTC'") ?? "Not supplied";
+
+    static string FormatSize(long bytes) =>
+        bytes >= 1024 * 1024
+            ? $"{bytes / 1024d / 1024d:N1} MiB"
+            : $"{bytes / 1024d:N1} KiB";
+
+    static string StateLabel(CatalogEntryState state) => state switch
+    {
+        CatalogEntryState.NeverImported => "Never imported",
+        CatalogEntryState.ImportedCurrent => "Imported / current",
+        CatalogEntryState.UpdateAvailable => "Update available",
+        CatalogEntryState.ImportedReleaseUnknown => "Imported release unknown",
+        CatalogEntryState.StateCheckFailed => "State check failed",
+        _ => state.ToString(),
+    };
+
+    static string DisplayImportedRelease(CatalogImportProvenance imported) =>
+        imported.Release?.Tag
+        ?? (string.IsNullOrWhiteSpace(imported.ImportedTag) ? "Unknown" : imported.ImportedTag);
+
+    static string DisplayValue(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? "Not supplied" : value;
+
+    static string DisplayList(IEnumerable<string> values) =>
+        values.Any() ? string.Join(", ", values) : "Not supplied";
+
+    public ValueTask DisposeAsync()
+    {
+        _lifetime.Cancel();
+        _operation?.Cancel();
+        _importOperation?.Cancel();
+        _importOperation?.Dispose();
+        _ = CatalogImportWorkflow.Cleanup(_preparedArtifact);
+        _lifetime.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

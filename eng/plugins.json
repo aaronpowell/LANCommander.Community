@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "key": "Server.Mcp",
+      "tagPrefix": "server-mcp",
+      "versionFile": "plugins/Server.Mcp/version.txt",
+      "project": "plugins/Server.Mcp/src/LANCommander.Mcp/LANCommander.Mcp.csproj",
+      "tests": [
+        "plugins/Server.Mcp/tests/LANCommander.Mcp.Tests/LANCommander.Mcp.Tests.csproj"
+      ],
+      "packageId": "LANCommander.Mcp",
+      "assemblyName": "LANCommander.Mcp",
+      "host": "Server",
+      "minimumHostVersion": "2.2.0-alpha.4",
+      "maximumHostVersion": null,
+      "artifactFormat": "nupkg"
+    },
+    {
+      "key": "Server.RecompCatalog",
+      "tagPrefix": "server-recompcatalog",
+      "versionFile": "plugins/Server.RecompCatalog/version.txt",
+      "project": "plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Plugin/LANCommander.RecompCatalog.Plugin.csproj",
+      "tests": [
+        "plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Tests/LANCommander.RecompCatalog.Tests.csproj"
+      ],
+      "packageId": "LANCommander.RecompCatalog.Plugin",
+      "assemblyName": "LANCommander.RecompCatalog.Plugin",
+      "host": "Server",
+      "minimumHostVersion": "2.2.0-alpha.3",
+      "maximumHostVersion": null,
+      "artifactFormat": "nupkg"
+    },
+    {
+      "key": "Launcher.MQTT",
+      "tagPrefix": "launcher-mqtt",
+      "versionFile": "plugins/Launcher.MQTT/version.txt",
+      "project": "plugins/Launcher.MQTT/src/LanCommander.HomeAssistant.Plugin/LanCommander.HomeAssistant.Plugin.csproj",
+      "tests": [
+        "plugins/Launcher.MQTT/tests/LanCommander.HomeAssistant.Core.Tests/LanCommander.HomeAssistant.Core.Tests.csproj",
+        "plugins/Launcher.MQTT/tests/LanCommander.HomeAssistant.HostLoader.Tests/LanCommander.HomeAssistant.HostLoader.Tests.csproj"
+      ],
+      "packageId": "LanCommander.HomeAssistant.Plugin",
+      "assemblyName": "LanCommander.HomeAssistant.Plugin",
+      "host": "Launcher",
+      "minimumHostVersion": "2.2.0-alpha.4",
+      "maximumHostVersion": "2.2.0-alpha.4",
+      "artifactFormat": "zip"
+    }
+  ]
+}

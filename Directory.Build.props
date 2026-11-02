@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <RepositoryRoot>$(MSBuildThisFileDirectory)</RepositoryRoot>
+  </PropertyGroup>
+  <PropertyGroup Condition="$([System.String]::Copy('$(MSBuildProjectDirectory)').Contains('$(MSBuildThisFileDirectory)plugins'))">
+    <TargetFramework Condition="'$(TargetFramework)' == ''">net10.0</TargetFramework>
+    <ImplicitUsings Condition="'$(ImplicitUsings)' == ''">enable</ImplicitUsings>
+    <Nullable Condition="'$(Nullable)' == ''">enable</Nullable>
+    <TreatWarningsAsErrors Condition="'$(TreatWarningsAsErrors)' == ''">true</TreatWarningsAsErrors>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <RepositoryUrl>https://github.com/aaronpowell/LANCommander.Community</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <Authors Condition="'$(Authors)' == ''">LANCommander Community contributors</Authors>
+    <IsPackable Condition="'$(IsPackable)' == ''">false</IsPackable>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,407 @@
+@using LANCommander.RecompCatalog.Infrastructure
+@using Microsoft.AspNetCore.Components.Forms
+@implements IAsyncDisposable
+@inject ICatalogRomHost RomHost
+
+@*
+    Chooses the ROM a recomp needs and where clients copy it. Supply GameId to manage an imported
+    game's ROM directly; omit it to collect a choice that the import flow applies with ApplyAsync.
+*@
+<Card Small Title="ROM" Subtitle="@Subtitle" Style="margin-top: 12px">
+    <Alert Info Title="You supply the ROM">
+        The plugin never downloads ROMs. Upload a dump you own, or reuse one already stored as a
+        redistributable. LANCommander installs it next to the game for each client.
+    </Alert>
+
+    @if (_loading)
+    {
+        <Spin />
+    }
+    else
+    {
+        @if (GameId is not null && _current is not null)
+        {
+            <dl>
+                <dt>Current ROM</dt>
+                <dd>@_current.Rom.Name</dd>
+                <dt>Installed as</dt>
+                <dd><Typography Code>@DisplayTarget(_current.Placement)</Typography></dd>
+            </dl>
+        }
+
+        <FormItem Label="ROM source">
+            <Segmented TValue="RomSource"
+                       Items="@SourceOptions"
+                       Value="@_source"
+                       ValueChanged="SourceChanged" />
+        </FormItem>
+
+        @if (_source == RomSource.Upload)
+        {
+            <FormItem Label="ROM file" Help="z64, v64 and n64 dumps are converted to big-endian (z64) order.">
+                <InputFile OnChange="UploadAsync" disabled="@(Disabled || _busy)" />
+            </FormItem>
+
+            @if (_uploaded is not null)
+            {
+                <dl>
+                    <dt>File</dt>
+                    <dd>@_uploaded.OriginalFileName (@FormatSize(_uploaded.Size))</dd>
+                    <dt>SHA-1</dt>
+                    <dd><Typography Code>@_uploaded.Sha1</Typography></dd>
+                    <dt>SHA-256</dt>
+                    <dd><Typography Code>@_uploaded.Sha256</Typography></dd>
+                </dl>
+                @if (_uploaded.WasByteSwapped)
+                {
+                    <Alert Info Title="Byte order converted">
+                        The dump was in @_uploaded.SourceByteOrder order and was converted to z64. Check
+                        the hashes against the ones the project expects.
+                    </Alert>
+                }
+                <FormItem Label="Redistributable label">
+                    <TextInput Immediate Value="@_label" ValueChanged="value => _label = value ?? string.Empty" />
+                </FormItem>
+            }
+        }
+        else if (_source == RomSource.Existing)
+        {
+            @if (_roms.Count == 0)
+            {
+                <Alert Warning Title="No stored ROMs">
+                    No ROM redistributables created by this plugin exist yet. Upload one instead.
+                </Alert>
+            }
+            else
+            {
+                <FormItem Label="Stored ROM">
+                    <Select TValue="string"
+                            Items="@RomOptions"
+                            Value="@_existingId"
+                            ValueChanged="value => _existingId = value ?? string.Empty" />
+                </FormItem>
+            }
+        }
+
+        @if (_source != RomSource.None)
+        {
+            <Row Gutter="12">
+                <Column Xs="24" Md="12">
+                    <FormItem Label="ROM file name" Help="The name the recomp expects, for example mm.n64.us.1.0.z64.">
+                        <TextInput Immediate Value="@_fileName" ValueChanged="value => _fileName = value ?? string.Empty" />
+                    </FormItem>
+                </Column>
+                <Column Xs="24" Md="12">
+                    <FormItem Label="Folder" Help="Relative to the install directory. Leave empty for the root.">
+                        <TextInput Immediate Value="@_directory" ValueChanged="DirectoryChanged" />
+                    </FormItem>
+                </Column>
+            </Row>
+
+            @if (ValidationError is { } validation)
+            {
+                <Alert Warning Title="ROM not ready">@validation</Alert>
+            }
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_status))
+        {
+            <Alert Info Title="ROM">@_status</Alert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_error))
+        {
+            <Alert Danger Title="ROM step failed">@_error</Alert>
+        }
+
+        @if (GameId is not null)
+        {
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                <Button Primary
+                        Loading="@_busy"
+                        Disabled="@(Disabled || _busy || _source == RomSource.None || ValidationError is not null)"
+                        OnClick="SaveAsync">
+                    Save ROM
+                </Button>
+                @if (_current is not null)
+                {
+                    <Button Disabled="@(Disabled || _busy)" OnClick="RemoveAsync">Remove ROM from game</Button>
+                }
+            </div>
+        }
+    }
+</Card>
+
+@code {
+    enum RomSource { None, Upload, Existing }
+
+    /// <summary>The imported game to manage. When null, the choice is applied by the import flow.</summary>
+    [Parameter] public Guid? GameId { get; set; }
+
+    /// <summary>The suggested folder, usually the folder of the primary executable.</summary>
+    [Parameter] public string DefaultDirectory { get; set; } = "";
+
+    [Parameter] public string GameTitle { get; set; } = "";
+
+    [Parameter] public bool Disabled { get; set; }
+
+    readonly CancellationTokenSource _lifetime = new();
+    IReadOnlyList<RomRedistributableInfo> _roms = [];
+    GameRomLink? _current;
+    NormalizedRom? _uploaded;
+    string? _uploadDirectory;
+    RomSource _source = RomSource.None;
+    string _existingId = "";
+    string _label = "";
+    string _fileName = "";
+    string _directory = "";
+    bool _directoryEdited;
+    bool _loading = true;
+    bool _loaded;
+    bool _busy;
+    string? _status;
+    string? _error;
+    Guid? _loadedGameId;
+
+    public bool HasSelection => _source != RomSource.None;
+
+    string Subtitle => GameId is null ? "Optional: attach a ROM during import" : "Manage this game's ROM";
+
+    static readonly IEnumerable<SelectItem<RomSource>> SourceOptions =
+    [
+        new(RomSource.None, "No ROM"),
+        new(RomSource.Upload, "Upload ROM"),
+        new(RomSource.Existing, "Use stored ROM"),
+    ];
+
+    IEnumerable<SelectItem<string>> RomOptions =>
+        new[] { new SelectItem<string>("", "Choose ROM") }
+            .Concat(_roms.Select(rom => new SelectItem<string>(rom.Id.ToString(), rom.Name)));
+
+    /// <summary>Why the current choice can't be applied, or null when it can.</summary>
+    public string? ValidationError => _source switch
+    {
+        RomSource.None => null,
+        RomSource.Upload when _uploaded is null => "Upload a ROM file.",
+        RomSource.Existing when !Guid.TryParse(_existingId, out _) => "Choose a stored ROM.",
+        _ => RomPlacement.Validate(_fileName, _directory),
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_directoryEdited && _current is null)
+            _directory = DefaultDirectory ?? "";
+
+        if (!_loaded || _loadedGameId != GameId)
+        {
+            _loaded = true;
+            _loadedGameId = GameId;
+            await LoadAsync();
+        }
+    }
+
+    async Task LoadAsync()
+    {
+        _loading = true;
+        _error = null;
+        try
+        {
+            _roms = await RomHost.ListRomsAsync(_lifetime.Token);
+            _current = GameId is { } gameId
+                ? await RomHost.GetGameRomAsync(gameId, _lifetime.Token)
+                : null;
+
+            if (_current is not null)
+            {
+                _source = RomSource.Existing;
+                _existingId = _current.Rom.Id.ToString();
+                _fileName = _current.Placement.TargetFileName;
+                _directory = _current.Placement.TargetDirectory;
+                _directoryEdited = true;
+            }
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            _error = $"Stored ROMs could not be loaded: {ex.Message}";
+        }
+        finally
+        {
+            _loading = false;
+        }
+    }
+
+    void SourceChanged(RomSource value)
+    {
+        _source = value;
+        _error = null;
+        _status = null;
+    }
+
+    void DirectoryChanged(string? value)
+    {
+        _directory = value ?? string.Empty;
+        _directoryEdited = true;
+    }
+
+    async Task UploadAsync(InputFileChangeEventArgs args)
+    {
+        DeleteUpload();
+        _error = null;
+        _busy = true;
+        _status = $"Reading {args.File.Name}...";
+        var directory = Path.Combine(Path.GetTempPath(), "LANCommander.RecompCatalog", "roms", Guid.NewGuid().ToString("N"));
+        _uploadDirectory = directory;
+
+        try
+        {
+            if (args.File.Size > RomNormalizer.DefaultMaxBytes)
+                throw new InvalidOperationException($"ROMs larger than {FormatSize(RomNormalizer.DefaultMaxBytes)} are not supported.");
+
+            await using var stream = args.File.OpenReadStream(RomNormalizer.DefaultMaxBytes, _lifetime.Token);
+            _uploaded = await RomNormalizer.NormalizeAsync(
+                stream,
+                args.File.Name,
+                directory,
+                RomNormalizer.DefaultMaxBytes,
+                cancellationToken: _lifetime.Token);
+            _label = string.IsNullOrWhiteSpace(GameTitle) ? Path.GetFileNameWithoutExtension(args.File.Name) : GameTitle;
+            _status = null;
+        }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            DeleteUpload();
+            _status = null;
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    /// <summary>Imports the chosen ROM if needed and links it to the game. Returns an error message, or null.</summary>
+    public async Task<string?> ApplyAsync(Guid gameId, IProgress<string>? progress, CancellationToken cancellationToken)
+    {
+        if (_source == RomSource.None)
+            return null;
+        if (ValidationError is { } validation)
+            return validation;
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(_lifetime.Token, cancellationToken);
+            Guid romId;
+            if (_source == RomSource.Upload)
+            {
+                var rom = await RomHost.ImportRomAsync(_uploaded!, _label, progress, linked.Token);
+                romId = rom.Id;
+            }
+            else
+            {
+                romId = Guid.Parse(_existingId);
+            }
+
+            progress?.Report("Linking ROM to the game...");
+            await RomHost.LinkAsync(gameId, romId, RomPlacement.Create(_fileName, _directory), linked.Token);
+            DeleteUpload();
+            _roms = await RomHost.ListRomsAsync(linked.Token);
+            _current = await RomHost.GetGameRomAsync(gameId, linked.Token);
+            _source = RomSource.Existing;
+            _existingId = romId.ToString();
+            return null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            return ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    async Task SaveAsync()
+    {
+        if (GameId is not { } gameId)
+            return;
+
+        var progress = new InlineProgress<string>(message =>
+        {
+            _status = message;
+            _ = InvokeAsync(StateHasChanged);
+        });
+        var error = await ApplyAsync(gameId, progress, CancellationToken.None);
+        _status = error is null ? "ROM saved. Clients install it with the game." : null;
+    }
+
+    async Task RemoveAsync()
+    {
+        if (GameId is not { } gameId)
+            return;
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            await RomHost.UnlinkAsync(gameId, _lifetime.Token);
+            _current = null;
+            _source = RomSource.None;
+            _existingId = "";
+            _status = "ROM removed from the game. The stored redistributable was kept.";
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    void DeleteUpload()
+    {
+        _uploaded = null;
+        if (_uploadDirectory is null)
+            return;
+
+        try
+        {
+            if (Directory.Exists(_uploadDirectory))
+                Directory.Delete(_uploadDirectory, recursive: true);
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+
+        _uploadDirectory = null;
+    }
+
+    static string DisplayTarget(RomPlacement placement) =>
+        string.IsNullOrEmpty(placement.TargetDirectory)
+            ? placement.TargetFileName
+            : $"{placement.TargetDirectory}\\{placement.TargetFileName}";
+
+    static string FormatSize(long bytes) =>
+        bytes >= 1024 * 1024 ? $"{bytes / 1024d / 1024d:0.#} MiB" : $"{bytes / 1024d:0.#} KiB";
+
+    public ValueTask DisposeAsync()
+    {
+        _lifetime.Cancel();
+        DeleteUpload();
+        _lifetime.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

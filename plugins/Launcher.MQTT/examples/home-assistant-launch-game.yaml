@@ -1,0 +1,41 @@
+alias: Launch a LANCommander game on the living-room TV
+mode: single
+sequence:
+  - action: media_player.turn_on
+    target:
+      entity_id: media_player.living_room_tv
+  - action: media_player.select_source
+    target:
+      entity_id: media_player.living_room_tv
+    data:
+      source: HDMI 2
+  - wait_template: "{{ is_state('binary_sensor.lc_livingroom_1234abcd_ready', 'on') }}"
+    timeout: "00:02:00"
+    continue_on_timeout: false
+  - variables:
+      request_id: >-
+        {{ '%04x%04x-%04x-4%03x-%04x-%04x%04x%04x' | format(
+          range(65536) | random, range(65536) | random, range(65536) | random,
+          range(4096) | random, range(32768, 49152) | random,
+          range(65536) | random, range(65536) | random, range(65536) | random) }}
+      issued_at: "{{ now().isoformat() }}"
+  - action: mqtt.publish
+    data:
+      topic: lancommander/livingroom/command/00000000-0000-0000-0000-000000000001
+      qos: 1
+      retain: false
+      payload: >-
+        {{ {
+          'requestId': request_id,
+          'action': 'launch',
+          'gameId': '00000000-0000-0000-0000-000000000001',
+          'issuedAt': issued_at,
+          'expiresAt': (as_datetime(issued_at) + timedelta(seconds=30)).isoformat()
+        } | to_json }}
+  - wait_template: >-
+      {{ state_attr('sensor.lc_livingroom_1234abcd_launch_outcome', 'requestId') == request_id
+         and states('sensor.lc_livingroom_1234abcd_launch_outcome') in ['running', 'completed', 'failed', 'rejected'] }}
+    timeout: "00:00:45"
+    continue_on_timeout: false
+  - variables:
+      launch_outcome: "{{ states('sensor.lc_livingroom_1234abcd_launch_outcome') }}"

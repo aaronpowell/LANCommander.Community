@@ -1,0 +1,14 @@
+<Solution>
+  <Project Path="plugins/Server.Mcp/src/LANCommander.Mcp/LANCommander.Mcp.csproj" />
+  <Project Path="plugins/Server.Mcp/tests/LANCommander.Mcp.Tests/LANCommander.Mcp.Tests.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Core/LANCommander.RecompCatalog.Core.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Infrastructure/LANCommander.RecompCatalog.Infrastructure.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Plugin/LANCommander.RecompCatalog.Plugin.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Providers/LANCommander.RecompCatalog.Providers.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Tests/LANCommander.RecompCatalog.Tests.csproj" />
+  <Project Path="plugins/Launcher.MQTT/src/LanCommander.HomeAssistant.Core/LanCommander.HomeAssistant.Core.csproj" />
+  <Project Path="plugins/Launcher.MQTT/src/LanCommander.HomeAssistant.Mqtt/LanCommander.HomeAssistant.Mqtt.csproj" />
+  <Project Path="plugins/Launcher.MQTT/src/LanCommander.HomeAssistant.Plugin/LanCommander.HomeAssistant.Plugin.csproj" />
+  <Project Path="plugins/Launcher.MQTT/tests/LanCommander.HomeAssistant.Core.Tests/LanCommander.HomeAssistant.Core.Tests.csproj" />
+  <Project Path="plugins/Launcher.MQTT/tests/LanCommander.HomeAssistant.HostLoader.Tests/LanCommander.HomeAssistant.HostLoader.Tests.csproj" />
+</Solution>

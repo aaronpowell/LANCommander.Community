@@ -1,0 +1,11 @@
+{
+  "BrokerHost": "mqtt.example.lan",
+  "BrokerPort": 1883,
+  "BrokerUsername": "",
+  "BrokerPassword": "",
+  "UseTls": false,
+  "ClientId": "lc_livingroom_1234abcd",
+  "TopicPrefix": "lancommander/livingroom",
+  "ExposureMode": "selected",
+  "Favorites": []
+}
