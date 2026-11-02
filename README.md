@@ -14,6 +14,16 @@ These are development versions, not a claim that new releases have been publishe
 
 The original MCP and Recomp MIT license files, MCP third-party notices, and the launcher MQTTnet license are retained with their components. No new license is inferred for launcher source because none was present in the supplied prototype snapshot.
 
+## Project and runtime identities
+
+Source projects and namespaces follow `LANCommander.Community.Server.Mcp`,
+`LANCommander.Community.Server.RecompCatalog.*`, and
+`LANCommander.Community.Launcher.MQTT.*`. Historical package IDs, assembly names,
+plugin IDs, and the launcher's `Plugins/LanCommander.HomeAssistant.Plugin`
+folder/configuration identity remain unchanged so existing installs upgrade in
+place. The retained `LanCommander.*` assembly filenames are compatibility names,
+not the source namespace convention.
+
 ## Build and validate
 
 Install the .NET 10 SDK, Node.js (for MCP setup tests), PowerShell 7, and Python 3.12 (for launcher Home Assistant template tests). To validate one component and produce only its local install artifact:
@@ -63,6 +73,6 @@ The launcher prototype's earlier HA-to-LANCommander launch PoC was reported work
 
 ## Migration and provenance
 
-The source snapshots were imported from the MCP, Recomp Catalog, and Home Assistant launcher prototype worktrees. Historical package, assembly, plugin, persisted data, HA entity, and configuration identities are retained; only repository structure and the launcher's logical component name use `Launcher.MQTT`. Keep existing launcher plugin directories and populated `homeassistant.json` files when upgrading. The package template contains blank broker credentials only.
+The source snapshots were imported from the MCP, Recomp Catalog, and Home Assistant launcher prototype worktrees. Historical server NuGet PackageIds, runtime AssemblyNames, plugin IDs, persisted data, HA entity, and configuration identities are retained. The source project and namespace hierarchy now follows `LANCommander.Community`; the launcher's logical component name is `Launcher.MQTT`. Keep existing launcher plugin directories and populated `homeassistant.json` files when upgrading. The package template contains blank broker credentials only.
 
 No original repository is changed or archived by this monorepo. The community repository is independent and is not an official LANCommander release channel.

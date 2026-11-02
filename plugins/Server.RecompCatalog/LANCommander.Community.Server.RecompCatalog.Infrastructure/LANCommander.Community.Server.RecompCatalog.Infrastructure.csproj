@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>LANCommander.Community.Server.RecompCatalog.Infrastructure</RootNamespace>
+    <AssemblyName>LANCommander.RecompCatalog.Infrastructure</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LANCommander.Community.Server.RecompCatalog.Core\LANCommander.Community.Server.RecompCatalog.Core.csproj" />
+    <ProjectReference Include="..\LANCommander.Community.Server.RecompCatalog.Providers\LANCommander.Community.Server.RecompCatalog.Providers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="LANCommander.SDK" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="LANCommander.RecompCatalog.Tests" />
+  </ItemGroup>
+
+</Project>

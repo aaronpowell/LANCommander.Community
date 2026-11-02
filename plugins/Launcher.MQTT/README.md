@@ -103,7 +103,7 @@ It targets alpha.4 source commit `4c8c73e47da6d4198c6153cc93ca7bb480d30abe`.
 
 ## Configure and build the source-pinned plugin
 
-1. Copy the package to the Launcher data root (see the [test guide](examples/TEST-GUIDE.md)), start the GUI and configure it in Launcher settings. Alternatively copy `src\LanCommander.HomeAssistant.Plugin\homeassistant.example.json` to the plugin's `homeassistant.json` and fill it in locally. `ExposureMode` is `"selected"` (default; `Favorites` is the UUID/title allowlist, now unlimited) or `"all"` (the authenticated visible library). An empty selection safely exposes no games.
+1. Copy the package to the Launcher data root (see the [test guide](examples/TEST-GUIDE.md)), start the GUI and configure it in Launcher settings. Alternatively copy `src\LANCommander.Community.Launcher.MQTT.Plugin\homeassistant.example.json` to the plugin's `homeassistant.json` and fill it in locally. `ExposureMode` is `"selected"` (default; `Favorites` is the UUID/title allowlist, now unlimited) or `"all"` (the authenticated visible library). An empty selection safely exposes no games.
 2. Set `UseTls` to `false` for plaintext MQTT (usually port `1883`), or `true` for TLS (usually port `8883`). Use the port configured on your broker; it is not changed automatically. Certificate errors are ignored when TLS is enabled. Existing configurations must add `BrokerUsername` and `BrokerPassword`; no Credential Manager entry is read.
 3. Use the repository validation command to materialize the pinned LANCommander
    `v2.2.0-alpha.4` source commit and run the core/loader/template tests:
@@ -132,7 +132,7 @@ See HA's [random filter reference](https://www.home-assistant.io/template-functi
 ## Build and test the core
 
 ```powershell
-dotnet test tests\LanCommander.HomeAssistant.Core.Tests\LanCommander.HomeAssistant.Core.Tests.csproj
+dotnet test tests\LANCommander.Community.Launcher.MQTT.Core.Tests\LANCommander.Community.Launcher.MQTT.Core.Tests.csproj
 ```
 
 No remote paths, shell commands, arguments, uninstall, force-stop or implicit
@@ -147,9 +147,9 @@ To repeat the alpha.4 host-loader check after building the plugin:
 
 ```powershell
 $env:LANCOMMANDER_SOURCE_ROOT = "C:\path\to\LANCommander"
-dotnet build src\LanCommander.HomeAssistant.Plugin\LanCommander.HomeAssistant.Plugin.csproj -c Release -p:LanCommanderSourceRoot="$env:LANCOMMANDER_SOURCE_ROOT"
-$env:LANCOMMANDER_HOMEASSISTANT_PLUGIN_PATH = (Resolve-Path "src\LanCommander.HomeAssistant.Plugin\bin\Release\net10.0\plugin-package\LanCommander.HomeAssistant.Plugin.dll").Path
-dotnet test tests\LanCommander.HomeAssistant.HostLoader.Tests\LanCommander.HomeAssistant.HostLoader.Tests.csproj -c Release
+dotnet build src\LANCommander.Community.Launcher.MQTT.Plugin\LANCommander.Community.Launcher.MQTT.Plugin.csproj -c Release -p:LANCommanderSourceRoot="$env:LANCOMMANDER_SOURCE_ROOT"
+$env:LANCOMMANDER_HOMEASSISTANT_PLUGIN_PATH = (Resolve-Path "src\LANCommander.Community.Launcher.MQTT.Plugin\bin\Release\net10.0\plugin-package\LanCommander.HomeAssistant.Plugin.dll").Path
+dotnet test tests\LANCommander.Community.Launcher.MQTT.HostLoader.Tests\LANCommander.Community.Launcher.MQTT.HostLoader.Tests.csproj -c Release
 ```
 
 To render the discovery template exported by the **actual packaged assembly** and
@@ -158,7 +158,7 @@ packages in `tests\ha-template-requirements.txt`):
 
 ```powershell
 $env:LANCOMMANDER_HA_TEMPLATE_EXPORT = Join-Path $env:TEMP "lancommander-ha-discovery.json"
-dotnet test tests\LanCommander.HomeAssistant.HostLoader.Tests\LanCommander.HomeAssistant.HostLoader.Tests.csproj -c Release
+dotnet test tests\LANCommander.Community.Launcher.MQTT.HostLoader.Tests\LANCommander.Community.Launcher.MQTT.HostLoader.Tests.csproj -c Release
 python tools\Test-HaTemplates.py "$env:LANCOMMANDER_HA_TEMPLATE_EXPORT"
 ```
 

@@ -7,7 +7,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
-$package = Join-Path $root 'src/LanCommander.HomeAssistant.Plugin/bin/Release/net10.0/plugin-package'
+$package = Join-Path $root 'src/LANCommander.Community.Launcher.MQTT.Plugin/bin/Release/net10.0/plugin-package'
 $required = @(
     'LanCommander.HomeAssistant.Plugin.dll',
     'LanCommander.HomeAssistant.Plugin.deps.json',
@@ -36,7 +36,7 @@ $plugin = Join-Path $staging 'Plugins/LanCommander.HomeAssistant.Plugin'
 New-Item $plugin -ItemType Directory -Force | Out-Null
 foreach ($file in $required) {
     if ($file -eq 'homeassistant.json') {
-        Copy-Item (Join-Path $root 'src/LanCommander.HomeAssistant.Plugin/homeassistant.example.json') (Join-Path $plugin $file)
+        Copy-Item (Join-Path $root 'src/LANCommander.Community.Launcher.MQTT.Plugin/homeassistant.example.json') (Join-Path $plugin $file)
     }
     else {
         Copy-Item (Join-Path $package $file) $plugin

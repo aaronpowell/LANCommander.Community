@@ -41,7 +41,7 @@ if ($Plugin -eq 'Launcher.MQTT') {
         throw "Launcher.MQTT requires LANCommander source $($sourcePin.commit); found '$actualCommit'."
     }
     $env:LANCOMMANDER_SOURCE_ROOT = $hostSource
-    & dotnet build $project -c Release --nologo "-p:LanCommanderSourceRoot=$hostSource"
+    & dotnet build $project -c Release --nologo "-p:LANCommanderSourceRoot=$hostSource"
 }
 elseif ($Package) {
     & dotnet pack $project -c Release -o $artifactDirectory --nologo

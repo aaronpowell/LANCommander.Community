@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { login, copy } from "../src/LANCommander.Mcp/Pages/setup.mjs";
+import { login, copy } from "../src/LANCommander.Community.Server.Mcp/Pages/setup.mjs";
 
 function form() {
     const fields = { username: { value: "admin" }, password: { value: "secret" } };

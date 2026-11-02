@@ -5,10 +5,11 @@
       "key": "Server.Mcp",
       "tagPrefix": "server-mcp",
       "versionFile": "plugins/Server.Mcp/version.txt",
-      "project": "plugins/Server.Mcp/src/LANCommander.Mcp/LANCommander.Mcp.csproj",
+      "project": "plugins/Server.Mcp/src/LANCommander.Community.Server.Mcp/LANCommander.Community.Server.Mcp.csproj",
       "tests": [
-        "plugins/Server.Mcp/tests/LANCommander.Mcp.Tests/LANCommander.Mcp.Tests.csproj"
+        "plugins/Server.Mcp/tests/LANCommander.Community.Server.Mcp.Tests/LANCommander.Community.Server.Mcp.Tests.csproj"
       ],
+      "rootNamespace": "LANCommander.Community.Server.Mcp",
       "packageId": "LANCommander.Mcp",
       "assemblyName": "LANCommander.Mcp",
       "host": "Server",
@@ -20,10 +21,11 @@
       "key": "Server.RecompCatalog",
       "tagPrefix": "server-recompcatalog",
       "versionFile": "plugins/Server.RecompCatalog/version.txt",
-      "project": "plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Plugin/LANCommander.RecompCatalog.Plugin.csproj",
+      "project": "plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Plugin/LANCommander.Community.Server.RecompCatalog.Plugin.csproj",
       "tests": [
-        "plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Tests/LANCommander.RecompCatalog.Tests.csproj"
+        "plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Tests/LANCommander.Community.Server.RecompCatalog.Tests.csproj"
       ],
+      "rootNamespace": "LANCommander.Community.Server.RecompCatalog.Plugin",
       "packageId": "LANCommander.RecompCatalog.Plugin",
       "assemblyName": "LANCommander.RecompCatalog.Plugin",
       "host": "Server",
@@ -35,11 +37,12 @@
       "key": "Launcher.MQTT",
       "tagPrefix": "launcher-mqtt",
       "versionFile": "plugins/Launcher.MQTT/version.txt",
-      "project": "plugins/Launcher.MQTT/src/LanCommander.HomeAssistant.Plugin/LanCommander.HomeAssistant.Plugin.csproj",
+      "project": "plugins/Launcher.MQTT/src/LANCommander.Community.Launcher.MQTT.Plugin/LANCommander.Community.Launcher.MQTT.Plugin.csproj",
       "tests": [
-        "plugins/Launcher.MQTT/tests/LanCommander.HomeAssistant.Core.Tests/LanCommander.HomeAssistant.Core.Tests.csproj",
-        "plugins/Launcher.MQTT/tests/LanCommander.HomeAssistant.HostLoader.Tests/LanCommander.HomeAssistant.HostLoader.Tests.csproj"
+        "plugins/Launcher.MQTT/tests/LANCommander.Community.Launcher.MQTT.Core.Tests/LANCommander.Community.Launcher.MQTT.Core.Tests.csproj",
+        "plugins/Launcher.MQTT/tests/LANCommander.Community.Launcher.MQTT.HostLoader.Tests/LANCommander.Community.Launcher.MQTT.HostLoader.Tests.csproj"
       ],
+      "rootNamespace": "LANCommander.Community.Launcher.MQTT",
       "packageId": "LanCommander.HomeAssistant.Plugin",
       "assemblyName": "LanCommander.HomeAssistant.Plugin",
       "host": "Launcher",

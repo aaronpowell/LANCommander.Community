@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>LANCommander.Community.Launcher.MQTT.Transport</RootNamespace>
+    <AssemblyName>LanCommander.HomeAssistant.Mqtt</AssemblyName>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="MQTTnet" />
+    <ProjectReference Include="..\LANCommander.Community.Launcher.MQTT.Core\LANCommander.Community.Launcher.MQTT.Core.csproj" />
+  </ItemGroup>
+</Project>

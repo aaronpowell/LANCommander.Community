@@ -77,7 +77,7 @@ Standard `dotnet pack` also produces the same package layout; the script adds va
 checksum. Host assemblies are compile-time references, not bundled dependencies.
 
 ```powershell
-dotnet pack LANCommander.RecompCatalog.Plugin\LANCommander.RecompCatalog.Plugin.csproj -c Release -o artifacts
+dotnet pack LANCommander.Community.Server.RecompCatalog.Plugin\LANCommander.Community.Server.RecompCatalog.Plugin.csproj -c Release -o artifacts
 ```
 
 CI builds, tests, and validates all components on pull requests. The matching
@@ -102,7 +102,7 @@ field reads) added in `2.2.0-alpha.3`, so use that version or later:
 
 ```powershell
 dotnet build .\LANCommander.Community.slnx -c Release
-dotnet test .\plugins\Server.RecompCatalog\LANCommander.RecompCatalog.Tests\LANCommander.RecompCatalog.Tests.csproj -c Release
+dotnet test .\plugins\Server.RecompCatalog\LANCommander.Community.Server.RecompCatalog.Tests\LANCommander.Community.Server.RecompCatalog.Tests.csproj -c Release
 ```
 
 ## Server plugin
@@ -161,7 +161,7 @@ still require separate acceptance testing against a disposable LANCommander inst
 Run the focused, offline re-import acceptance tests (using the built host assemblies described above):
 
 ```powershell
-dotnet test LANCommander.RecompCatalog.Tests\LANCommander.RecompCatalog.Tests.csproj --filter "FullyQualifiedName~CatalogImportSafetyTests|FullyQualifiedName~CatalogBrowserTests|FullyQualifiedName~PluginServiceRegistrationTests" --nologo --verbosity quiet
+dotnet test LANCommander.Community.Server.RecompCatalog.Tests\LANCommander.Community.Server.RecompCatalog.Tests.csproj --filter "FullyQualifiedName~CatalogImportSafetyTests|FullyQualifiedName~CatalogBrowserTests|FullyQualifiedName~PluginServiceRegistrationTests" --nologo --verbosity quiet
 ```
 
 These tests use in-memory host state and importer callbacks; they do not deploy the plugin or

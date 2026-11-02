@@ -10,6 +10,18 @@ foreach ($plugin in $plugins) {
             throw "$($plugin.key) references missing project '$path'."
         }
     }
+
+    [xml] $pluginProjectXml = Get-Content -LiteralPath (Join-Path $repositoryRoot $plugin.project) -Raw
+    $assemblyName = $pluginProjectXml.Project.PropertyGroup.AssemblyName
+    $packageId = $pluginProjectXml.Project.PropertyGroup.PackageId
+    $rootNamespace = $pluginProjectXml.Project.PropertyGroup.RootNamespace
+    if ($assemblyName -cne $plugin.assemblyName -or
+        ($plugin.artifactFormat -eq 'nupkg' -and $packageId -cne $plugin.packageId)) {
+        throw "$($plugin.key) package/assembly identity differs from the compatibility registry."
+    }
+    if ($rootNamespace -cne $plugin.rootNamespace -or $rootNamespace -notmatch '^LANCommander\.Community\.') {
+        throw "$($plugin.key) root namespace does not match the Community naming registry."
+    }
 }
 
 $requiredFiles = @(
@@ -26,21 +38,21 @@ foreach ($path in $requiredFiles) {
     }
 }
 
-$example = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/Launcher.MQTT/src/LanCommander.HomeAssistant.Plugin/homeassistant.example.json') -Raw |
+$example = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/Launcher.MQTT/src/LANCommander.Community.Launcher.MQTT.Plugin/homeassistant.example.json') -Raw |
     ConvertFrom-Json
 if ($example.BrokerUsername -or $example.BrokerPassword -or $example.UseTls) {
     throw 'The launcher example must contain blank credentials and retain the plaintext default.'
 }
 
-$launcherIds = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/Launcher.MQTT/src/LanCommander.HomeAssistant.Plugin/HomeAssistantLauncherPlugin.cs') -Raw
+$launcherIds = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/Launcher.MQTT/src/LANCommander.Community.Launcher.MQTT.Plugin/HomeAssistantLauncherPlugin.cs') -Raw
 if ($launcherIds -notmatch 'Id = "com\.aaronpowell\.lancommander\.homeassistant"') {
     throw 'The existing launcher plugin ID changed.'
 }
-$mcpIds = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/Server.Mcp/src/LANCommander.Mcp/McpPlugin.cs') -Raw
+$mcpIds = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/Server.Mcp/src/LANCommander.Community.Server.Mcp/McpPlugin.cs') -Raw
 if ($mcpIds -notmatch 'io\.github\.aaronpowell\.lancommander\.mcp') {
     throw 'The existing MCP plugin ID changed.'
 }
-$recompIds = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/Server.RecompCatalog/LANCommander.RecompCatalog.Plugin/RecompCatalogPlugin.cs') -Raw
+$recompIds = Get-Content -LiteralPath (Join-Path $repositoryRoot 'plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Plugin/RecompCatalogPlugin.cs') -Raw
 if ($recompIds -notmatch 'dev\.aaronpowell\.lancommander\.recompcatalog') {
     throw 'The existing Recomp Catalog plugin ID changed.'
 }

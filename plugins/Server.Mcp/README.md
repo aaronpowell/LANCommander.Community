@@ -18,7 +18,7 @@ The initial implementation was checked against upstream `LANCommander/LANCommand
 ## Build and install
 
 ```powershell
-dotnet test plugins\Server.Mcp\tests\LANCommander.Mcp.Tests -c Release
+dotnet test plugins\Server.Mcp\tests\LANCommander.Community.Server.Mcp.Tests\LANCommander.Community.Server.Mcp.Tests.csproj -c Release
 node --test plugins\Server.Mcp\tests\setup.test.mjs
 pwsh .\eng\Validate-Plugin.ps1 -Plugin Server.Mcp -OutputDirectory "$env:TEMP\server-mcp-validation"
 ```
@@ -41,6 +41,8 @@ only the DLL will retain the faulty manifest.
 
 For a manual installation, build in Release and copy the **whole output folder**
 to `Plugins\LANCommander.Mcp` under the server's application directory, then restart.
+The source namespace is now `LANCommander.Community.Server.Mcp`; its package ID,
+runtime assembly name, and plugin ID intentionally retain their existing identities.
 Do not copy just the main DLL. Use either manual installation or the package
 installer, not both.
 

@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>LANCommander.Community.Server.RecompCatalog.Plugin</RootNamespace>
+    <AssemblyName>LANCommander.RecompCatalog.Plugin</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <PackageId>LANCommander.RecompCatalog.Plugin</PackageId>
+    <Authors>Aaron Powell</Authors>
+    <Description>Independent Quiver-compatible recompilation catalog browser and game importer for LANCommander Server.</Description>
+    <PackageProjectUrl>https://github.com/aaronpowell/LANCommander.Community/tree/main/plugins/Server.RecompCatalog</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/aaronpowell/LANCommander.Community</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>LANCommander;plugin;server;recomp;catalog</PackageTags>
+    <PackageType>LANCommander.Plugin;LANCommander.Plugin.Server</PackageType>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);PackPluginAssemblies</TargetsForTfmSpecificBuildOutput>
+    <!-- Keep the git SHA out of the reported plugin version. -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <!-- The plugin is dropped into the server's Plugins folder; it serves no static web assets. -->
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <InternalsVisibleTo Include="LANCommander.RecompCatalog.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LANCommander.Community.Server.RecompCatalog.Core\LANCommander.Community.Server.RecompCatalog.Core.csproj" />
+    <ProjectReference Include="..\LANCommander.Community.Server.RecompCatalog.Infrastructure\LANCommander.Community.Server.RecompCatalog.Infrastructure.csproj" />
+    <ProjectReference Include="..\LANCommander.Community.Server.RecompCatalog.Providers\LANCommander.Community.Server.RecompCatalog.Providers.csproj" />
+  </ItemGroup>
+
+  <!--
+    Host contract and UI assemblies are compile-time only. The server already has them loaded, so the
+    plugin must not ship private copies with conflicting type identities.
+  -->
+  <ItemGroup>
+    <PackageReference Include="LANCommander.SDK" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="LANCommander.Server.Plugins" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="LANCommander.Server.UI" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE" Pack="true" PackagePath="\" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <PluginAssembly Include="LANCommander.RecompCatalog.Core;LANCommander.RecompCatalog.Infrastructure;LANCommander.RecompCatalog.Providers" />
+  </ItemGroup>
+
+  <Target Name="PackPluginAssemblies" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <BuildOutputInPackage Include="@(PluginAssembly->'$(OutDir)%(Identity).dll')" />
+    </ItemGroup>
+  </Target>
+
+</Project>
