@@ -1,0 +1,15 @@
+{
+  "name": "Fixture Recomps",
+  "description": "Fixture-driven catalog test data",
+  "version": "1.2.3",
+  "apps": [
+    {
+      "name": "Fixture Game",
+      "project": "Fixture Recompiled",
+      "repository": "fixture/game",
+      "folderName": "FixtureGame-FixtureRecompiled",
+      "releaseAssetFilter": "portable",
+      "tags": ["recomp", "windows"]
+    }
+  ]
+}

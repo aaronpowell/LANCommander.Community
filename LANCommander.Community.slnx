@@ -1,0 +1,14 @@
+<Solution>
+  <Project Path="plugins/Server.Mcp/src/LANCommander.Community.Server.Mcp/LANCommander.Community.Server.Mcp.csproj" />
+  <Project Path="plugins/Server.Mcp/tests/LANCommander.Community.Server.Mcp.Tests/LANCommander.Community.Server.Mcp.Tests.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Core/LANCommander.Community.Server.RecompCatalog.Core.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Infrastructure/LANCommander.Community.Server.RecompCatalog.Infrastructure.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Plugin/LANCommander.Community.Server.RecompCatalog.Plugin.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Providers/LANCommander.Community.Server.RecompCatalog.Providers.csproj" />
+  <Project Path="plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Tests/LANCommander.Community.Server.RecompCatalog.Tests.csproj" />
+  <Project Path="plugins/Launcher.MQTT/src/LANCommander.Community.Launcher.MQTT.Core/LANCommander.Community.Launcher.MQTT.Core.csproj" />
+  <Project Path="plugins/Launcher.MQTT/src/LANCommander.Community.Launcher.MQTT.Transport/LANCommander.Community.Launcher.MQTT.Transport.csproj" />
+  <Project Path="plugins/Launcher.MQTT/src/LANCommander.Community.Launcher.MQTT.Plugin/LANCommander.Community.Launcher.MQTT.Plugin.csproj" />
+  <Project Path="plugins/Launcher.MQTT/tests/LANCommander.Community.Launcher.MQTT.Core.Tests/LANCommander.Community.Launcher.MQTT.Core.Tests.csproj" />
+  <Project Path="plugins/Launcher.MQTT/tests/LANCommander.Community.Launcher.MQTT.HostLoader.Tests/LANCommander.Community.Launcher.MQTT.HostLoader.Tests.csproj" />
+</Solution>

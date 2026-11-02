@@ -1,0 +1,13 @@
+**/bin/
+**/obj/
+**/.vs/
+.cache/
+artifacts/
+TestResults/
+*.user
+*.suo
+*.pfx
+.env
+.env.*
+plugins/Launcher.MQTT/**/homeassistant.json
+plugins/Launcher.MQTT/**/homeassistant.json.tmp

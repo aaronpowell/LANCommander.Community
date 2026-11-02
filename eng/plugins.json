@@ -1,0 +1,54 @@
+{
+  "schemaVersion": 1,
+  "plugins": [
+    {
+      "key": "Server.Mcp",
+      "tagPrefix": "server-mcp",
+      "versionFile": "plugins/Server.Mcp/version.txt",
+      "project": "plugins/Server.Mcp/src/LANCommander.Community.Server.Mcp/LANCommander.Community.Server.Mcp.csproj",
+      "tests": [
+        "plugins/Server.Mcp/tests/LANCommander.Community.Server.Mcp.Tests/LANCommander.Community.Server.Mcp.Tests.csproj"
+      ],
+      "rootNamespace": "LANCommander.Community.Server.Mcp",
+      "packageId": "LANCommander.Mcp",
+      "assemblyName": "LANCommander.Mcp",
+      "host": "Server",
+      "minimumHostVersion": "2.2.0-alpha.4",
+      "maximumHostVersion": null,
+      "artifactFormat": "nupkg"
+    },
+    {
+      "key": "Server.RecompCatalog",
+      "tagPrefix": "server-recompcatalog",
+      "versionFile": "plugins/Server.RecompCatalog/version.txt",
+      "project": "plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Plugin/LANCommander.Community.Server.RecompCatalog.Plugin.csproj",
+      "tests": [
+        "plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Tests/LANCommander.Community.Server.RecompCatalog.Tests.csproj"
+      ],
+      "rootNamespace": "LANCommander.Community.Server.RecompCatalog.Plugin",
+      "packageId": "LANCommander.RecompCatalog.Plugin",
+      "assemblyName": "LANCommander.RecompCatalog.Plugin",
+      "host": "Server",
+      "minimumHostVersion": "2.2.0-alpha.3",
+      "maximumHostVersion": null,
+      "artifactFormat": "nupkg"
+    },
+    {
+      "key": "Launcher.MQTT",
+      "tagPrefix": "launcher-mqtt",
+      "versionFile": "plugins/Launcher.MQTT/version.txt",
+      "project": "plugins/Launcher.MQTT/src/LANCommander.Community.Launcher.MQTT.Plugin/LANCommander.Community.Launcher.MQTT.Plugin.csproj",
+      "tests": [
+        "plugins/Launcher.MQTT/tests/LANCommander.Community.Launcher.MQTT.Core.Tests/LANCommander.Community.Launcher.MQTT.Core.Tests.csproj",
+        "plugins/Launcher.MQTT/tests/LANCommander.Community.Launcher.MQTT.HostLoader.Tests/LANCommander.Community.Launcher.MQTT.HostLoader.Tests.csproj"
+      ],
+      "rootNamespace": "LANCommander.Community.Launcher.MQTT",
+      "packageId": "LanCommander.HomeAssistant.Plugin",
+      "assemblyName": "LanCommander.HomeAssistant.Plugin",
+      "host": "Launcher",
+      "minimumHostVersion": "2.2.0-alpha.4",
+      "maximumHostVersion": "2.2.0-alpha.4",
+      "artifactFormat": "zip"
+    }
+  ]
+}

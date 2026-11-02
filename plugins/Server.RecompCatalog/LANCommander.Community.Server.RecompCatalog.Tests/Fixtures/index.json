@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "lists": [
+    {
+      "id": "fixture-list",
+      "remoteLocation": "https://catalog.test/apps.json"
+    }
+  ],
+  "platformMetadataUrl": "https://catalog.test/platform-index.json"
+}

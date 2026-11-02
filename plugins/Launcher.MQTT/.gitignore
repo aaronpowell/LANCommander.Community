@@ -1,0 +1,9 @@
+**/bin/
+**/obj/
+.vs/
+*.user
+*.suo
+homeassistant.json
+discovery-topics.json
+discovery-topics.json.tmp
+homeassistant.json.tmp
