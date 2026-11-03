@@ -16,8 +16,8 @@ metadata. Keep these values consistent when changing the registry.
 
 | Component key | Version file | Changelog | Tag format | Release asset |
 | --- | --- | --- | --- | --- |
-| `Server.Mcp` | `plugins/Server.Mcp/version.txt` | `plugins/Server.Mcp/CHANGELOG.md` | `server-mcp-v<version>` | `LANCommander.Mcp.<version>.nupkg` |
-| `Server.RecompCatalog` | `plugins/Server.RecompCatalog/version.txt` | `plugins/Server.RecompCatalog/CHANGELOG.md` | `server-recompcatalog-v<version>` | `LANCommander.RecompCatalog.Plugin.<version>.nupkg` |
+| `Server.Mcp` | `plugins/Server.Mcp/version.txt` | `plugins/Server.Mcp/CHANGELOG.md` | `server-mcp-v<version>` | `LANCommander.Community.Server.Mcp.<version>.nupkg` |
+| `Server.RecompCatalog` | `plugins/Server.RecompCatalog/version.txt` | `plugins/Server.RecompCatalog/CHANGELOG.md` | `server-recompcatalog-v<version>` | `LANCommander.Community.Server.RecompCatalog.Plugin.<version>.nupkg` |
 | `Launcher.MQTT` | `plugins/Launcher.MQTT/version.txt` | `plugins/Launcher.MQTT/CHANGELOG.md` | `launcher-mqtt-v<version>` | `launcher-mqtt-<version>.zip` |
 
 Use complete SemVer in `version.txt`, including prerelease identifiers when
@@ -77,8 +77,9 @@ covered by their package tests.
 
 1. Make the intended component changes. Update only its `version.txt` and add a
    substantive, non-empty changelog section headed with the exact same version.
-   Keep the package/assembly/plugin/configuration identities unchanged unless
-   an explicitly authorized compatibility and migration plan says otherwise.
+   Keep each project, package ID, and owned assembly name aligned. Preserve
+   semantic plugin IDs and persisted/configuration identifiers unless an
+   explicitly authorized compatibility and migration plan says otherwise.
 2. Run repository checks and that component's validation command above. Review
    the generated package/ZIP and checksums; use a fresh output directory.
 3. Commit the reviewed source and version/changelog changes, and merge them to
@@ -118,8 +119,9 @@ part of the tag-triggered path.
 
 ## Optional NuGet.org distribution
 
-Only the existing server `.nupkg` artifacts are eligible:
-`LANCommander.Mcp` and `LANCommander.RecompCatalog.Plugin`. The separate
+Only the server `.nupkg` artifacts are eligible:
+`LANCommander.Community.Server.Mcp` and
+`LANCommander.Community.Server.RecompCatalog.Plugin`. The separate
 [Publish existing release to NuGet.org](.github/workflows/publish-nuget.yml)
 workflow is manual-only. It requires a
 tag that already points to `main` and has a fully published GitHub Release;
@@ -133,7 +135,8 @@ Before enabling this path, a repository maintainer must:
    reviewers, enable **Prevent self-review**, and restrict its deployment
    branches to the exact `main` branch only.
 2. Create a NuGet.org API key scoped only to push new versions of
-   `LANCommander.Mcp` and `LANCommander.RecompCatalog.Plugin`, with an expiry,
+   `LANCommander.Community.Server.Mcp` and
+   `LANCommander.Community.Server.RecompCatalog.Plugin`, with an expiry,
    and add it as the environment secret `NUGET_API_KEY`. Do not use a personal
    account-wide key or commit the secret. No environment, secret, account, or
    NuGet publisher is configured by this change.
@@ -277,12 +280,17 @@ secret, account, or trusted publisher is configured. Do not grant broader
 permissions or perform a remote tag/release action without explicit
 authorization.
 
-Project paths and C# namespaces use the `LANCommander.Community` hierarchy.
-Historical deployed package IDs, assembly names, plugin IDs, launcher install
-folder, persisted data, and launcher `homeassistant.json` identity remain
-unchanged. Keep existing launcher configuration when upgrading; the checked-in
-example has blank broker credentials. Changing any installed identity requires
-an explicit migration plan and authorization, not just a rename for consistency.
+Project paths, package IDs, owned assembly names, and C# namespaces use the
+`LANCommander.Community` hierarchy and exact `LANCommander` casing. The former
+server package IDs and Launcher assembly/folder names were never published to
+NuGet.org; new artifacts use the project-qualified identities. Semantic plugin
+IDs, persisted server data, launcher `homeassistant.json`, MQTT topics/client
+identity, and HA entity identifiers remain unchanged. When upgrading an earlier
+manual Launcher install, replace only the old plugin folder and preserve its
+populated `homeassistant.json` and `discovery-topics.json` as described in the
+Launcher README. The checked-in example has blank broker credentials. Changing
+these persistent identifiers requires a separate explicit migration plan and
+authorization.
 
 Launcher.MQTT implements a general MQTT command/state protocol. Home Assistant
 discovery and templates are its HA-specific integration layer; do not describe

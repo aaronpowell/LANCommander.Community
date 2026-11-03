@@ -3,11 +3,12 @@
 A Windows LANCommander GUI Launcher plugin that publishes bounded command/state events over MQTT. Home Assistant is one supported integration; its discovery payloads and sample automation are HA-specific, while the command and state topics can be used by any MQTT client.
 
 The source projects and namespaces use
-`LANCommander.Community.Launcher.MQTT.*`. For compatibility, the deployed
-assembly names, plugin ID, `Plugins/LanCommander.HomeAssistant.Plugin` folder,
-and `homeassistant.json` configuration identity retain their historical names.
-This is the imported 0.2.0 development prototype, not a claim that a release has
-been published.
+`LANCommander.Community.Launcher.MQTT.*`; the deployed assemblies and plugin
+folder now use their project names, including
+`Plugins/LANCommander.Community.Launcher.MQTT.Plugin`. The persistent plugin ID
+and `homeassistant.json` configuration identity remain unchanged. This is the
+imported 0.2.0 development prototype, not a claim that a release has been
+published.
 
 ## Current prototype (0.2.0)
 
@@ -102,11 +103,20 @@ After building and validating Release, run:
 pwsh .\eng\Validate-Plugin.ps1 -Plugin Launcher.MQTT -OutputDirectory "C:\path\to\new-artifact-folder"
 ```
 
-The ZIP contains `Plugins\LanCommander.HomeAssistant.Plugin`, a configuration
+The ZIP contains `Plugins\LANCommander.Community.Launcher.MQTT.Plugin`, a configuration
 template, a [test guide](examples/TEST-GUIDE.md), sample HA script, dependency
 license and SHA-256 inventory. Copy its plugin folder to the Launcher's existing
 **data/config root** under `Plugins`, not necessarily beside the executable.
 It targets alpha.4 source commit `4c8c73e47da6d4198c6153cc93ca7bb480d30abe`.
+
+When replacing an earlier `Plugins\LanCommander.HomeAssistant.Plugin` install,
+exit the Launcher, back up `homeassistant.json` and `discovery-topics.json` if
+present, remove only that old plugin folder, and install the new
+`Plugins\LANCommander.Community.Launcher.MQTT.Plugin` folder. Restore those two
+files into the new folder before starting the Launcher; do not overwrite the
+populated config with the ZIP's blank template. This preserves broker settings,
+the unchanged semantic plugin ID and the retained-topic cleanup journal. Leave
+other entries under `Plugins` untouched.
 
 ## Configure and build the source-pinned plugin
 
@@ -155,7 +165,7 @@ To repeat the alpha.4 host-loader check after building the plugin:
 ```powershell
 $env:LANCOMMANDER_SOURCE_ROOT = "C:\path\to\LANCommander"
 dotnet build src\LANCommander.Community.Launcher.MQTT.Plugin\LANCommander.Community.Launcher.MQTT.Plugin.csproj -c Release -p:LANCommanderSourceRoot="$env:LANCOMMANDER_SOURCE_ROOT"
-$env:LANCOMMANDER_HOMEASSISTANT_PLUGIN_PATH = (Resolve-Path "src\LANCommander.Community.Launcher.MQTT.Plugin\bin\Release\net10.0\plugin-package\LanCommander.HomeAssistant.Plugin.dll").Path
+$env:LANCOMMANDER_MQTT_PLUGIN_PATH = (Resolve-Path "src\LANCommander.Community.Launcher.MQTT.Plugin\bin\Release\net10.0\plugin-package\LANCommander.Community.Launcher.MQTT.Plugin.dll").Path
 dotnet test tests\LANCommander.Community.Launcher.MQTT.HostLoader.Tests\LANCommander.Community.Launcher.MQTT.HostLoader.Tests.csproj -c Release
 ```
 

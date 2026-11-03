@@ -9,10 +9,10 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $package = Join-Path $root 'src/LANCommander.Community.Launcher.MQTT.Plugin/bin/Release/net10.0/plugin-package'
 $required = @(
-    'LanCommander.HomeAssistant.Plugin.dll',
-    'LanCommander.HomeAssistant.Plugin.deps.json',
-    'LanCommander.HomeAssistant.Core.dll',
-    'LanCommander.HomeAssistant.Mqtt.dll',
+    'LANCommander.Community.Launcher.MQTT.Plugin.dll',
+    'LANCommander.Community.Launcher.MQTT.Plugin.deps.json',
+    'LANCommander.Community.Launcher.MQTT.Core.dll',
+    'LANCommander.Community.Launcher.MQTT.Transport.dll',
     'MQTTnet.dll',
     'homeassistant.json'
 )
@@ -32,7 +32,7 @@ if ((Test-Path $staging) -or (Test-Path $zip)) {
     throw "Output already exists at '$staging' or '$zip'; choose a fresh output directory."
 }
 
-$plugin = Join-Path $staging 'Plugins/LanCommander.HomeAssistant.Plugin'
+$plugin = Join-Path $staging 'Plugins/LANCommander.Community.Launcher.MQTT.Plugin'
 New-Item $plugin -ItemType Directory -Force | Out-Null
 foreach ($file in $required) {
     if ($file -eq 'homeassistant.json') {

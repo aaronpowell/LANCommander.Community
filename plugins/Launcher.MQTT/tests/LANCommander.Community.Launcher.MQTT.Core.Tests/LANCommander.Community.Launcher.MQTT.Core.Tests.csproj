@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>LANCommander.Community.Launcher.MQTT.Core.Tests</RootNamespace>
-    <AssemblyName>LanCommander.HomeAssistant.Core.Tests</AssemblyName>
+    <AssemblyName>LANCommander.Community.Launcher.MQTT.Core.Tests</AssemblyName>
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

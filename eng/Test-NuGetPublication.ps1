@@ -10,7 +10,7 @@ $originalApiKey = [Environment]::GetEnvironmentVariable('NUGET_API_KEY', 'Proces
 function New-TestPackage {
     param(
         [Parameter(Mandatory)][string] $Path,
-        [string] $PackageId = 'LANCommander.Mcp',
+        [string] $PackageId = 'LANCommander.Community.Server.Mcp',
         [string] $Version = '0.2.1',
         [string[]] $Types = @('LANCommander.Plugin', 'LANCommander.Plugin.Server'),
         [string[]] $Tags = @('LANCommander', 'plugin', 'server', 'mcp')
@@ -95,7 +95,7 @@ function New-RepositorySignedTestPackage {
 function New-TestArtifact {
     param(
         [Parameter(Mandatory)][string] $Directory,
-        [string] $PackageId = 'LANCommander.Mcp',
+        [string] $PackageId = 'LANCommander.Community.Server.Mcp',
         [string] $PackageVersion = '0.2.1',
         [string] $NuspecId = $PackageId,
         [string] $NuspecVersion = $PackageVersion,
@@ -168,7 +168,7 @@ try {
 
     $planOutput = (& $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $validDirectory -Publish -PlanOnly 2>&1) -join "`n"
     $plan = $planOutput -split "\r?\n" | Where-Object { $_ -match '^\{"component"' } | Select-Object -Last 1 | ConvertFrom-Json
-    if ($plan.component -cne 'Server.Mcp' -or $plan.packageId -cne 'LANCommander.Mcp' -or
+    if ($plan.component -cne 'Server.Mcp' -or $plan.packageId -cne 'LANCommander.Community.Server.Mcp' -or
         $plan.version -cne '0.2.1' -or $plan.publishRequested -ne $true) {
         throw 'The opt-in package plan did not preserve component, package identity, and version.'
     }
@@ -206,7 +206,7 @@ try {
 
     $wrongChecksumDirectory = Join-Path $testRoot 'wrong-checksum'
     New-TestArtifact -Directory $wrongChecksumDirectory
-    Set-Content -LiteralPath (Join-Path $wrongChecksumDirectory 'LANCommander.Mcp.0.2.1.nupkg.sha256') -Value 'bad checksum'
+    Set-Content -LiteralPath (Join-Path $wrongChecksumDirectory 'LANCommander.Community.Server.Mcp.0.2.1.nupkg.sha256') -Value 'bad checksum'
     Assert-Fails {
         & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $wrongChecksumDirectory -Publish -PlanOnly
     } 'checksum sidecar' 'Artifact integrity validation'
@@ -217,11 +217,11 @@ try {
         & $publisher -Plugin Launcher.MQTT -Tag launcher-mqtt-v0.2.0 -ArtifactDirectory $launcherDirectory -Publish -PlanOnly
     } 'not eligible for NuGet publication' 'ZIP ineligibility'
 
-    $expectedPackagePath = Join-Path $validDirectory 'LANCommander.Mcp.0.2.1.nupkg'
+    $expectedPackagePath = Join-Path $validDirectory 'LANCommander.Community.Server.Mcp.0.2.1.nupkg'
     $signedPackagePath = Join-Path $testRoot 'repository-signed.nupkg'
     New-RepositorySignedTestPackage -SourcePath $expectedPackagePath -DestinationPath $signedPackagePath
     $validVerificationOutput = @'
-Package name: LANCommander.Mcp
+Package name: LANCommander.Community.Server.Mcp
 Signature type: Repository
 Service index: https://api.nuget.org/v3/index.json
 '@
@@ -229,12 +229,12 @@ Service index: https://api.nuget.org/v3/index.json
     Compare-NuGetPackagePayload -ExpectedPackagePath $expectedPackagePath -PublishedPackagePath $signedPackagePath
 
     $changedNuspecPath = Join-Path $testRoot 'changed-nuspec.nupkg'
-    New-TestPackage -Path $changedNuspecPath -PackageId 'LANCommander.Mcp' -Version '0.2.1' -Tags @('changed')
+    New-TestPackage -Path $changedNuspecPath -PackageId 'LANCommander.Community.Server.Mcp' -Version '0.2.1' -Tags @('changed')
     $changedNuspecSignedPath = Join-Path $testRoot 'changed-nuspec-signed.nupkg'
     New-RepositorySignedTestPackage -SourcePath $changedNuspecPath -DestinationPath $changedNuspecSignedPath
     Assert-Fails {
         Compare-NuGetPackagePayload -ExpectedPackagePath $expectedPackagePath -PublishedPackagePath $changedNuspecSignedPath
-    } "archive path 'LANCommander.Mcp.nuspec'" 'Changed nuspec retry'
+    } "archive path 'LANCommander.Community.Server.Mcp.nuspec'" 'Changed nuspec retry'
 
     $changedPayloadPath = Join-Path $testRoot 'changed-payload.nupkg'
     New-RepositorySignedTestPackage -SourcePath $expectedPackagePath -DestinationPath $changedPayloadPath -PayloadChange 'different payload'

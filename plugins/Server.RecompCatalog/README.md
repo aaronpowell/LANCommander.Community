@@ -9,9 +9,9 @@ or endorsed by Quiver or its maintainers. Quiver inspired the workflow, and its 
 catalog feed format and data are compatibility inputs only. The plugin does not bundle,
 mirror, or depend on the Quiver application.
 
-The source projects and namespaces use
-`LANCommander.Community.Server.RecompCatalog.*`. The installable package ID,
-runtime assembly, and plugin ID retain their existing LANCommander identities.
+The source projects, namespaces, installable package ID, and owned assemblies
+use `LANCommander.Community.Server.RecompCatalog.*`. The persistent plugin ID
+remains `dev.aaronpowell.lancommander.recompcatalog`.
 
 ## Workflow
 
@@ -31,7 +31,9 @@ guarantee: administrators must review upstream projects and release artifacts.
 ## Installation
 
 The repository's development version is not a claim that a package has been
-published. See the repository's [plugin release procedure](../../RELEASES.md)
+published. The former package ID was never published to NuGet.org; generated
+packages now use the project-qualified ID above. See the repository's
+[plugin release procedure](../../RELEASES.md)
 for the current tag, workflow, and publication behavior. The plugin needs a
 LANCommander server build that carries the plugin contracts described under
 [Build](#build) and the [host load-context prerequisite](#host-load-context-prerequisite).
@@ -41,7 +43,7 @@ LANCommander server build that carries the plugin contracts described under
    verify the hash:
 
    ```powershell
-   $package = 'LANCommander.RecompCatalog.Plugin.0.4.2.nupkg'
+   $package = 'LANCommander.Community.Server.RecompCatalog.Plugin.0.4.2.nupkg'
    $expected = (Get-Content "$package.sha256").Split(' ')[0]
    (Get-FileHash $package -Algorithm SHA256).Hash.ToLowerInvariant() -eq $expected
    ```
@@ -82,9 +84,9 @@ checksum. Host assemblies are compile-time references, not bundled dependencies.
 dotnet pack .\plugins\Server.RecompCatalog\LANCommander.Community.Server.RecompCatalog.Plugin\LANCommander.Community.Server.RecompCatalog.Plugin.csproj -c Release -o artifacts
 ```
 
-Pull request CI validates all components. This package is distributed as a
-LANCommander plugin through the repository's GitHub Release; it is not
-published to NuGet.org.
+Pull request CI validates all components. This package is distributed through
+the repository's GitHub Release; the optional, manually gated NuGet.org
+workflow uses the normalized package ID.
 
 ## Build
 
@@ -103,7 +105,7 @@ dotnet test .\plugins\Server.RecompCatalog\LANCommander.Community.Server.RecompC
 
 ## Server plugin
 
-`LANCommander.RecompCatalog.Plugin` is the server-side plugin. It registers an
+`LANCommander.Community.Server.RecompCatalog.Plugin` is the server-side plugin. It registers an
 `IServerRouteAssemblyExtension` and an `IServerNavigationExtension`, and serves an
 administrator-only catalog browser at `/Plugins/RecompCatalog`.
 
@@ -263,11 +265,19 @@ never writes game/archive rows directly. The imported package carries the
 catalog identity, exact release identity, and serialized update policy so later catalog refreshes
 can classify existing games without title matching.
 
+When replacing an earlier manual install, stop the server, remove the old
+`Plugins\LANCommander.RecompCatalog.Plugin` folder, and install the new package
+or complete output under `Plugins\LANCommander.Community.Server.RecompCatalog.Plugin`.
+Imported games, archives, and package scripts live in LANCommander's data store,
+not the plugin folder; keep the same plugin ID when replacing the plugin.
+
 The host packages (`LANCommander.SDK`, `LANCommander.Server.Plugins`, and
 `LANCommander.Server.UI`) are referenced with `ExcludeAssets="runtime"` and `PrivateAssets="all"`,
 so they are compile-time only. Plugin output
-contains the plugin plus its private `LANCommander.RecompCatalog.Core`,
-`LANCommander.RecompCatalog.Infrastructure`, and `LANCommander.RecompCatalog.Providers`
+contains the plugin plus its private
+`LANCommander.Community.Server.RecompCatalog.Core`,
+`LANCommander.Community.Server.RecompCatalog.Infrastructure`, and
+`LANCommander.Community.Server.RecompCatalog.Providers`
 assemblies, but no host or Radzen binaries. This is required: the server
 must provide the already-loaded copies so contract types and Razor controls keep a single identity
 across the plugin's isolated load context.

@@ -15,9 +15,10 @@ foreach ($plugin in $plugins) {
     $assemblyName = $pluginProjectXml.Project.PropertyGroup.AssemblyName
     $packageId = $pluginProjectXml.Project.PropertyGroup.PackageId
     $rootNamespace = $pluginProjectXml.Project.PropertyGroup.RootNamespace
-    if ($assemblyName -cne $plugin.assemblyName -or
-        ($plugin.artifactFormat -eq 'nupkg' -and $packageId -cne $plugin.packageId)) {
-        throw "$($plugin.key) package/assembly identity differs from the compatibility registry."
+    $projectName = [IO.Path]::GetFileNameWithoutExtension($plugin.project)
+    if ($plugin.assemblyName -cne $projectName -or $assemblyName -cne $projectName -or
+        $plugin.packageId -cne $projectName -or $packageId -cne $projectName) {
+        throw "$($plugin.key) assembly and package IDs must match its project name '$projectName'."
     }
     if ($rootNamespace -cne $plugin.rootNamespace -or $rootNamespace -notmatch '^LANCommander\.Community\.') {
         throw "$($plugin.key) root namespace does not match the Community naming registry."
@@ -41,6 +42,20 @@ foreach ($plugin in $plugins) {
     }
     if ($plugin.artifactFormat -eq 'nupkg' -and $expectedTypes.Count -eq 0) {
         throw "$($plugin.key) NuGet artifacts must declare their host package types."
+    }
+}
+
+$allProjects = Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'plugins') -Filter '*.csproj' -File -Recurse
+foreach ($project in $allProjects) {
+    [xml] $projectXml = Get-Content -LiteralPath $project.FullName -Raw
+    $projectName = [IO.Path]::GetFileNameWithoutExtension($project.Name)
+    $assemblyName = [string]$projectXml.Project.PropertyGroup.AssemblyName
+    $packageId = [string]$projectXml.Project.PropertyGroup.PackageId
+    if ($assemblyName -and $assemblyName -cne $projectName) {
+        throw "Project '$($project.FullName)' overrides AssemblyName '$assemblyName'; expected '$projectName'."
+    }
+    if ($packageId -and $packageId -cne $projectName) {
+        throw "Project '$($project.FullName)' overrides PackageId '$packageId'; expected '$projectName'."
     }
 }
 

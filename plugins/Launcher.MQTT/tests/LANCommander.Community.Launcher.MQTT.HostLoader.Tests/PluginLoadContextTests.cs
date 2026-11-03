@@ -18,7 +18,7 @@ public sealed class PluginLoadContextTests
     [Fact]
     public async Task Host_loader_discovers_package_and_skips_transport_in_headless_mode()
     {
-        var pluginPath = Environment.GetEnvironmentVariable("LANCOMMANDER_HOMEASSISTANT_PLUGIN_PATH");
+        var pluginPath = Environment.GetEnvironmentVariable("LANCOMMANDER_MQTT_PLUGIN_PATH");
         Assert.False(string.IsNullOrWhiteSpace(pluginPath));
         var directory = Path.GetDirectoryName(Path.GetFullPath(pluginPath!))!;
         var services = new ServiceCollection().AddLogging();
@@ -38,8 +38,8 @@ public sealed class PluginLoadContextTests
     [Fact]
     public void Plugin_entrypoint_and_host_service_types_bind_to_host_assemblies()
     {
-        var pluginPath = Environment.GetEnvironmentVariable("LANCOMMANDER_HOMEASSISTANT_PLUGIN_PATH");
-        Assert.False(string.IsNullOrWhiteSpace(pluginPath), "Set LANCOMMANDER_HOMEASSISTANT_PLUGIN_PATH to the built plugin assembly.");
+        var pluginPath = Environment.GetEnvironmentVariable("LANCOMMANDER_MQTT_PLUGIN_PATH");
+        Assert.False(string.IsNullOrWhiteSpace(pluginPath), "Set LANCOMMANDER_MQTT_PLUGIN_PATH to the built plugin assembly.");
 
         var hostAssemblies = new[]
         {
@@ -54,6 +54,7 @@ public sealed class PluginLoadContextTests
         var pluginDirectory = Path.GetDirectoryName(pluginPath!)!;
 
         Assert.NotNull(manifest);
+        Assert.Equal("LANCommander.Community.Launcher.MQTT.Plugin", pluginAssembly.GetName().Name);
         Assert.True(typeof(IPlugin).IsAssignableFrom(manifest!.EntryPoint));
         var plugin = Activator.CreateInstance(manifest.EntryPoint) as IPlugin;
         Assert.Equal("com.aaronpowell.lancommander.homeassistant", plugin?.Id);
@@ -67,12 +68,12 @@ public sealed class PluginLoadContextTests
         var templateExport = Environment.GetEnvironmentVariable("LANCOMMANDER_HA_TEMPLATE_EXPORT");
         if (!string.IsNullOrEmpty(templateExport))
         {
-            var transportAssembly = context.LoadFromAssemblyName(new AssemblyName("LanCommander.HomeAssistant.Mqtt"));
+            var transportAssembly = context.LoadFromAssemblyName(new AssemblyName("LANCommander.Community.Launcher.MQTT.Transport"));
             var gameType = transportAssembly.GetType("LANCommander.Community.Launcher.MQTT.Transport.FavoriteGame", throwOnError: true)!;
             var favorites = Array.CreateInstance(gameType, 1);
             favorites.SetValue(Activator.CreateInstance(gameType, Guid.NewGuid(), "Template test game"), 0);
             var discoveryType = transportAssembly.GetType("LANCommander.Community.Launcher.MQTT.Transport.HomeAssistantDiscovery", throwOnError: true)!;
-            var coreAssembly = context.LoadFromAssemblyName(new AssemblyName("LanCommander.HomeAssistant.Core"));
+            var coreAssembly = context.LoadFromAssemblyName(new AssemblyName("LANCommander.Community.Launcher.MQTT.Core"));
             var catalogType = coreAssembly.GetType("LANCommander.Community.Launcher.MQTT.Core.CatalogGame", throwOnError: true)!;
             var catalog = Array.CreateInstance(catalogType, 1);
             catalog.SetValue(Activator.CreateInstance(catalogType, Guid.NewGuid(), "Duplicate title [test]", false, false, "not_installed", null), 0);
@@ -86,9 +87,9 @@ public sealed class PluginLoadContextTests
         Assert.Equal(
             new[]
             {
-                "LanCommander.HomeAssistant.Core.dll",
-                "LanCommander.HomeAssistant.Mqtt.dll",
-                "LanCommander.HomeAssistant.Plugin.dll",
+                "LANCommander.Community.Launcher.MQTT.Core.dll",
+                "LANCommander.Community.Launcher.MQTT.Plugin.dll",
+                "LANCommander.Community.Launcher.MQTT.Transport.dll",
                 "MQTTnet.dll"
             },
             Directory.EnumerateFiles(pluginDirectory, "*.dll")

@@ -5,9 +5,9 @@ Protocol (MCP). It runs **inside LANCommander**, uses its provider contracts and
 authentication, and opens no additional listener.
 
 Its source project and namespace use
-`LANCommander.Community.Server.Mcp`. For compatibility with existing installs,
-the package ID and runtime assembly remain `LANCommander.Mcp`, and the plugin ID
-remains `io.github.aaronpowell.lancommander.mcp`.
+`LANCommander.Community.Server.Mcp`. The package ID and runtime assembly now
+match that project name. The persistent plugin ID remains
+`io.github.aaronpowell.lancommander.mcp`.
 
 ## Requirements
 
@@ -29,7 +29,7 @@ pwsh .\eng\Validate-Plugin.ps1 -Plugin Server.Mcp -OutputDirectory "$env:TEMP\se
 ```
 
 The selected package is written to the output directory as
-`LANCommander.Mcp.0.2.1.nupkg`. Upload it through the server's plugin
+`LANCommander.Community.Server.Mcp.0.2.1.nupkg`. Upload it through the server's plugin
 package installer, then restart LANCommander. The package declares
 `LANCommander.Plugin` and `LANCommander.Plugin.Server` and bundles its private
 dependencies and dependency manifest under `lib/net10.0`. Host-owned LANCommander
@@ -41,14 +41,16 @@ dependency manifest is actually bundled, including platform-specific assets.
 
 If upgrading from 0.1.0 after a `Microsoft.PowerShell.Native` / `build.manifest`
 load failure, install 0.1.1 and restart the server. For manual installations,
-replace the old plugin output, including `LANCommander.Mcp.deps.json`; replacing
-only the DLL will retain the faulty manifest.
+stop the server, remove the old `Plugins\LANCommander.Mcp` output directory, and
+install the new complete `Plugins\LANCommander.Community.Server.Mcp` output.
+The package ID and assembly name changed together; the semantic plugin ID did
+not. The old package ID was not published to NuGet.org.
 
 For a manual installation, build in Release and copy the **whole output folder**
-to `Plugins\LANCommander.Mcp` under the server's application directory, then restart.
+to `Plugins\LANCommander.Community.Server.Mcp` under the server's application directory, then restart.
 The source namespace is now `LANCommander.Community.Server.Mcp`; its package ID,
-runtime assembly name, and plugin ID intentionally retain their existing identities.
-Do not copy just the main DLL. Use either manual installation or the package
+runtime assembly name, and project name now match; the persistent plugin ID is
+unchanged. Do not copy just the main DLL. Use either manual installation or the package
 installer, not both.
 
 The published `0.2.0` package is historical and is not replaced by this

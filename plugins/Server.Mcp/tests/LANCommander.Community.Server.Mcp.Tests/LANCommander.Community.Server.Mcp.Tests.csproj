@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <RootNamespace>LANCommander.Community.Server.Mcp.Tests</RootNamespace>
-    <AssemblyName>LANCommander.Mcp.Tests</AssemblyName>
+    <AssemblyName>LANCommander.Community.Server.Mcp.Tests</AssemblyName>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

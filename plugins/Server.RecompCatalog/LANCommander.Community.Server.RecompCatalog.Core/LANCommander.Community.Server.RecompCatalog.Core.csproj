@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>LANCommander.Community.Server.RecompCatalog.Core</RootNamespace>
-    <AssemblyName>LANCommander.RecompCatalog.Core</AssemblyName>
+    <AssemblyName>LANCommander.Community.Server.RecompCatalog.Core</AssemblyName>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

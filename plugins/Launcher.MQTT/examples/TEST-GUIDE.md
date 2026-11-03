@@ -13,24 +13,26 @@ Its new GUI and real install workflow still require your smoke test.
    directory. `LANCOMMANDER_DATA_DIR`, if set, is the exact root; otherwise it is
    normally `Data` beneath the Launcher's working directory. Protected locations
    can use local application data instead. Use the existing configuration/DB root.
-3. Copy `Plugins\LanCommander.HomeAssistant.Plugin` under that root's `Plugins`:
+3. Copy `Plugins\LANCommander.Community.Launcher.MQTT.Plugin` under that root's `Plugins`:
 
    ```text
    <Launcher data root>\
      Plugins\
-       LanCommander.HomeAssistant.Plugin\
-         LanCommander.HomeAssistant.Plugin.dll
-         LanCommander.HomeAssistant.Plugin.deps.json
-         LanCommander.HomeAssistant.Core.dll
-         LanCommander.HomeAssistant.Mqtt.dll
+       LANCommander.Community.Launcher.MQTT.Plugin\
+         LANCommander.Community.Launcher.MQTT.Plugin.dll
+         LANCommander.Community.Launcher.MQTT.Plugin.deps.json
+         LANCommander.Community.Launcher.MQTT.Core.dll
+         LANCommander.Community.Launcher.MQTT.Transport.dll
          MQTTnet.dll
          homeassistant.json
    ```
 
-**On upgrade, replace DLLs/deps but keep your populated `homeassistant.json`
-and `discovery-topics.json` if present.** The blank template must not overwrite
-your credentials. Existing `Favorites` migrate to selected exposure automatically.
-Keep the same client ID/topic prefix to update existing entities. No host SDK,
+**When upgrading an older `LanCommander.HomeAssistant.Plugin` folder, back up
+`homeassistant.json` and `discovery-topics.json` if present, remove only that old
+folder, install the new `LANCommander.Community.Launcher.MQTT.Plugin` folder, and
+restore the two files there before launching.** Do not overwrite populated config
+with the blank template. Existing `Favorites` migrate to selected exposure
+automatically. Keep the same client ID/topic prefix to update existing entities. No host SDK,
 Launcher DLLs, build-output `runtimes` directory or ZIP belongs in the plugin folder.
 
 ## Configure in the Launcher
