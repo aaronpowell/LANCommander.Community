@@ -2,6 +2,26 @@
   "schemaVersion": 1,
   "plugins": [
     {
+      "key": "Server.Quake3",
+      "tagPrefix": "server-quake3",
+      "versionFile": "plugins/Server.Quake3/version.txt",
+      "project": "plugins/Server.Quake3/LANCommander.Community.Server.Quake3/LANCommander.Community.Server.Quake3.csproj",
+      "tests": [
+        "plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Tests/LANCommander.Community.Server.Quake3.Tests.csproj",
+        "plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Host.Tests/LANCommander.Community.Server.Quake3.Host.Tests.csproj"
+      ],
+      "rootNamespace": "LANCommander.Community.Server.Quake3",
+      "packageId": "LANCommander.Community.Server.Quake3",
+      "assemblyName": "LANCommander.Community.Server.Quake3",
+      "host": "Server",
+      "minimumHostVersion": "2.2.0-beta.1-fileaccess.local.1",
+      "maximumHostVersion": null,
+      "hostPackageVersion": "2.2.0-beta.1-fileaccess.local.1",
+      "hostSourceCommit": "6013e6af6af08d19de7021ace70029c71ff9e7da",
+      "releaseBlockedReason": "Requires an unreleased upstream host-routed file API. Published beta.1 is insufficient.",
+      "artifactFormat": "nupkg"
+    },
+    {
       "key": "Server.Mcp",
       "tagPrefix": "server-mcp",
       "versionFile": "plugins/Server.Mcp/version.txt",

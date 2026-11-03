@@ -19,6 +19,18 @@ metadata. Keep these values consistent when changing the registry.
 | `Server.Mcp` | `plugins/Server.Mcp/version.txt` | `plugins/Server.Mcp/CHANGELOG.md` | `server-mcp-v<version>` | `LANCommander.Mcp.<version>.nupkg` |
 | `Server.RecompCatalog` | `plugins/Server.RecompCatalog/version.txt` | `plugins/Server.RecompCatalog/CHANGELOG.md` | `server-recompcatalog-v<version>` | `LANCommander.RecompCatalog.Plugin.<version>.nupkg` |
 | `Launcher.MQTT` | `plugins/Launcher.MQTT/version.txt` | `plugins/Launcher.MQTT/CHANGELOG.md` | `launcher-mqtt-v<version>` | `launcher-mqtt-<version>.zip` |
+| `Server.Quake3` | `plugins/Server.Quake3/version.txt` | `plugins/Server.Quake3/CHANGELOG.md` | `server-quake3-v<version>` | `LANCommander.Community.Server.Quake3.<version>.nupkg` |
+
+`Server.Quake3` is a development preview, not release-ready. Its isolated host
+pin is `2.2.0-beta.1-fileaccess.local.1`, an explicitly unreleased upstream
+build with host-routed server file operations, **not published beta.1**.
+Its core tests run in ordinary CI; full plugin/UI/loader/package validation
+also runs in the CI matrix and currently fails restore (`NU1102`) because the
+development host version is not on NuGet.org. Local validation requires the
+upstream feed described in its README. The registry's
+`releaseBlockedReason` makes the publisher refuse it. Do not remove that gate
+until a real compatible host version is released, pinned and validated.
+Other plugins retain their existing central host baseline.
 
 Use complete SemVer in `version.txt`, including prerelease identifiers when
 applicable. The tag must contain that exact version, and the changelog must

@@ -22,9 +22,19 @@ $tag = @(Resolve-PluginSelection -Tag 'launcher-mqtt-v0.2.0')
 Assert-Equal 'Launcher.MQTT' $tag[0].key 'Component-tag selection'
 Assert-Equal '0.2.0' $tag[0].version 'Component-tag SemVer'
 
+$quake = @(Resolve-PluginSelection -Tag 'server-quake3-v0.1.0-alpha.1')
+Assert-Equal 'Server.Quake3' $quake[0].key 'Quake component-tag selection'
+Assert-Equal '0.1.0-alpha.1' $quake[0].version 'Quake independent prerelease'
+Assert-Equal 4 @(Get-PluginRegistry).Count 'Complete component registry'
+
 $batch = @(Resolve-PluginSelection -Plugins @('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT'))
 Assert-Equal @('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT') @($batch | ForEach-Object key) 'Coordinated LC batch'
 Assert-Equal @('0.2.1', '0.4.2', '0.2.0') @($batch | ForEach-Object version) 'Independent batch versions'
+
+$all = @(Resolve-PluginSelection -Plugins @('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT', 'Server.Quake3'))
+Assert-Equal @('0.2.1', '0.4.2', '0.2.0', '0.1.0-alpha.1') @($all | ForEach-Object version) 'Four-component independent versions'
+$quakeMetadata = @(Get-PluginRegistry | Where-Object key -CEQ 'Server.Quake3')[0]
+if (-not $quakeMetadata.releaseBlockedReason) { throw 'Unreleased Quake host contracts must block publication.' }
 
 foreach ($version in @('1.2.3', '0.3.0-beta.1', '1.2.3-rc.2+build.7')) {
     if (-not (Test-PluginSemVer $version)) { throw "Valid SemVer was rejected: $version" }

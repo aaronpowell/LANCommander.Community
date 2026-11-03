@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>LANCommander.Community.Server.Quake3.Host.Tests</AssemblyName>
+    <RootNamespace>LANCommander.Community.Server.Quake3.Host.Tests</RootNamespace>
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="..\LANCommander.Community.Server.Quake3\LANCommander.Community.Server.Quake3.csproj" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" PrivateAssets="all" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="bunit" />
+    <PackageReference Include="LANCommander.SDK" />
+    <PackageReference Include="LANCommander.Server.Plugins" />
+    <PackageReference Include="LANCommander.Server.UI" />
+  </ItemGroup>
+</Project>

@@ -4,6 +4,7 @@ Use the component-focused project and namespace hierarchy:
 
 - `LANCommander.Community.Server.Mcp`
 - `LANCommander.Community.Server.RecompCatalog.*`
+- `LANCommander.Community.Server.Quake3` and its `.Core` / test projects
 - `LANCommander.Community.Launcher.MQTT.*`
 
 Keep the historical deployed package/assembly/plugin/configuration identities
