@@ -21,6 +21,9 @@ jobs:
         run: |
           ./eng/Test-ReleaseSelection.ps1
           ./eng/Test-Repository.ps1
+          ./eng/Test-ReleaseDestinations.ps1
+          ./eng/Test-NuGetPublication.ps1
+          ./eng/Test-GitHubPackages.ps1
       - name: Validate Quake core safety tests
         run: dotnet test plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Tests/LANCommander.Community.Server.Quake3.Tests.csproj -c Release --nologo
 

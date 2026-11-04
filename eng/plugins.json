@@ -13,12 +13,24 @@
       "rootNamespace": "LANCommander.Community.Server.Quake3",
       "packageId": "LANCommander.Community.Server.Quake3",
       "assemblyName": "LANCommander.Community.Server.Quake3",
+      "packageTypes": [
+        "LANCommander.Plugin",
+        "LANCommander.Plugin.Server"
+      ],
+      "packageTags": [
+        "LANCommander",
+        "plugin",
+        "server",
+        "quake3"
+      ],
       "host": "Server",
       "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": null,
       "hostPackageVersion": "2.2.0-beta.3",
       "hostSourceCommit": "9eefa639a904059c0a03f39e7908332f468828af",
-      "artifactFormat": "nupkg"
+      "artifactFormat": "nupkg",
+      "githubPackagesEligible": true,
+      "nugetOrgEligible": true
     },
     {
       "key": "Server.Mcp",
@@ -29,12 +41,24 @@
         "plugins/Server.Mcp/tests/LANCommander.Community.Server.Mcp.Tests/LANCommander.Community.Server.Mcp.Tests.csproj"
       ],
       "rootNamespace": "LANCommander.Community.Server.Mcp",
-      "packageId": "LANCommander.Mcp",
-      "assemblyName": "LANCommander.Mcp",
+      "packageId": "LANCommander.Community.Server.Mcp",
+      "assemblyName": "LANCommander.Community.Server.Mcp",
+      "packageTypes": [
+        "LANCommander.Plugin",
+        "LANCommander.Plugin.Server"
+      ],
+      "packageTags": [
+        "LANCommander",
+        "plugin",
+        "server",
+        "mcp"
+      ],
       "host": "Server",
       "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": null,
-      "artifactFormat": "nupkg"
+      "artifactFormat": "nupkg",
+      "githubPackagesEligible": true,
+      "nugetOrgEligible": true
     },
     {
       "key": "Server.RecompCatalog",
@@ -45,12 +69,25 @@
         "plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Tests/LANCommander.Community.Server.RecompCatalog.Tests.csproj"
       ],
       "rootNamespace": "LANCommander.Community.Server.RecompCatalog.Plugin",
-      "packageId": "LANCommander.RecompCatalog.Plugin",
-      "assemblyName": "LANCommander.RecompCatalog.Plugin",
+      "packageId": "LANCommander.Community.Server.RecompCatalog.Plugin",
+      "assemblyName": "LANCommander.Community.Server.RecompCatalog.Plugin",
+      "packageTypes": [
+        "LANCommander.Plugin",
+        "LANCommander.Plugin.Server"
+      ],
+      "packageTags": [
+        "LANCommander",
+        "plugin",
+        "server",
+        "recomp",
+        "catalog"
+      ],
       "host": "Server",
       "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": null,
-      "artifactFormat": "nupkg"
+      "artifactFormat": "nupkg",
+      "githubPackagesEligible": true,
+      "nugetOrgEligible": true
     },
     {
       "key": "Launcher.MQTT",
@@ -62,12 +99,16 @@
         "plugins/Launcher.MQTT/tests/LANCommander.Community.Launcher.MQTT.HostLoader.Tests/LANCommander.Community.Launcher.MQTT.HostLoader.Tests.csproj"
       ],
       "rootNamespace": "LANCommander.Community.Launcher.MQTT",
-      "packageId": "LanCommander.HomeAssistant.Plugin",
-      "assemblyName": "LanCommander.HomeAssistant.Plugin",
+      "packageId": "LANCommander.Community.Launcher.MQTT.Plugin",
+      "assemblyName": "LANCommander.Community.Launcher.MQTT.Plugin",
+      "packageTypes": [],
+      "packageTags": [],
       "host": "Launcher",
       "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": "2.2.0-beta.3",
-      "artifactFormat": "zip"
+      "artifactFormat": "zip",
+      "githubPackagesEligible": false,
+      "nugetOrgEligible": false
     }
   ]
 }

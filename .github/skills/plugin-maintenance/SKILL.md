@@ -17,10 +17,12 @@ support it.
   `LANCommander.Community.Server.RecompCatalog.*`, and
   `LANCommander.Community.Launcher.MQTT.*` for project names, paths, and C#
   namespaces. Use exact `LANCommander` casing for source-owned names.
-- Preserve deployed package IDs, assembly names, plugin IDs, persisted/config
-  keys, launcher install folder, and HA entity identifiers. A requested
-  installed-identity change needs an explicit compatibility/migration plan and
-  authorization; do not infer that a source rename permits it.
+- Set each owned `AssemblyName` and `PackageId` to the exact current project
+  name with `LANCommander` casing; do not keep legacy pre-monorepo names as
+  active build or package outputs. Preserve semantic plugin IDs, persisted/config
+  keys, MQTT topics/client identity, and HA entity identifiers. If one of
+  those persistent identities must change, require an explicit
+  compatibility/migration plan and authorization.
 - Keep helper and test projects non-packable. Use central NuGet versions and
   retain host-provided runtime exclusions and loader checks. Bundle only
   private plugin dependencies.

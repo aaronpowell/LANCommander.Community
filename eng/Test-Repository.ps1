@@ -15,12 +15,56 @@ foreach ($plugin in $plugins) {
     $assemblyName = $pluginProjectXml.Project.PropertyGroup.AssemblyName
     $packageId = $pluginProjectXml.Project.PropertyGroup.PackageId
     $rootNamespace = $pluginProjectXml.Project.PropertyGroup.RootNamespace
-    if ($assemblyName -cne $plugin.assemblyName -or
-        ($plugin.artifactFormat -eq 'nupkg' -and $packageId -cne $plugin.packageId)) {
-        throw "$($plugin.key) package/assembly identity differs from the compatibility registry."
+    $projectName = [IO.Path]::GetFileNameWithoutExtension($plugin.project)
+    if ($plugin.assemblyName -cne $projectName -or $assemblyName -cne $projectName -or
+        $plugin.packageId -cne $projectName -or $packageId -cne $projectName) {
+        throw "$($plugin.key) assembly and package IDs must match its project name '$projectName'."
     }
     if ($rootNamespace -cne $plugin.rootNamespace -or $rootNamespace -notmatch '^LANCommander\.Community\.') {
         throw "$($plugin.key) root namespace does not match the Community naming registry."
+    }
+    $packageTypes = @(([string]$pluginProjectXml.Project.PropertyGroup.PackageType).Split(';', [StringSplitOptions]::RemoveEmptyEntries))
+    $expectedTypes = @($plugin.packageTypes)
+    if (@(Compare-Object $expectedTypes $packageTypes).Count -gt 0) {
+        throw "$($plugin.key) PackageType metadata does not match the release registry."
+    }
+    $packageTags = @(([string]$pluginProjectXml.Project.PropertyGroup.PackageTags).Split(';', [StringSplitOptions]::RemoveEmptyEntries))
+    foreach ($requiredTag in @($plugin.packageTags)) {
+        if ($requiredTag -notin $packageTags) {
+            throw "$($plugin.key) is missing required package search tag '$requiredTag'."
+        }
+    }
+    if ($plugin.artifactFormat -eq 'zip' -and $expectedTypes.Count -gt 0) {
+        throw "$($plugin.key) ZIP artifacts must not claim NuGet package types."
+    }
+    if ($plugin.artifactFormat -eq 'zip' -and $pluginProjectXml.Project.PropertyGroup.IsPackable -cne 'false') {
+        throw "$($plugin.key) ZIP-only project must remain non-packable as a NuGet package."
+    }
+    if ($plugin.artifactFormat -eq 'nupkg' -and $expectedTypes.Count -eq 0) {
+        throw "$($plugin.key) NuGet artifacts must declare their host package types."
+    }
+    if ($plugin.githubPackagesEligible -isnot [bool] -or
+        $plugin.nugetOrgEligible -isnot [bool] -or
+        (($plugin.githubPackagesEligible -or $plugin.nugetOrgEligible) -and $plugin.artifactFormat -cne 'nupkg')) {
+        throw "$($plugin.key) package-feed eligibility must be explicit bools and only nupkg artifacts may be eligible."
+    }
+    if (($plugin.githubPackagesEligible -or $plugin.nugetOrgEligible) -and
+        [string]$pluginProjectXml.Project.PropertyGroup.RepositoryUrl -cne 'https://github.com/aaronpowell/LANCommander.Community') {
+        throw "$($plugin.key) must link package feeds to the canonical LANCommander.Community repository."
+    }
+}
+
+$allProjects = Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'plugins') -Filter '*.csproj' -File -Recurse
+foreach ($project in $allProjects) {
+    [xml] $projectXml = Get-Content -LiteralPath $project.FullName -Raw
+    $projectName = [IO.Path]::GetFileNameWithoutExtension($project.Name)
+    $assemblyName = [string]$projectXml.Project.PropertyGroup.AssemblyName
+    $packageId = [string]$projectXml.Project.PropertyGroup.PackageId
+    if ($assemblyName -and $assemblyName -cne $projectName) {
+        throw "Project '$($project.FullName)' overrides AssemblyName '$assemblyName'; expected '$projectName'."
+    }
+    if ($packageId -and $packageId -cne $projectName) {
+        throw "Project '$($project.FullName)' overrides PackageId '$packageId'; expected '$projectName'."
     }
 }
 

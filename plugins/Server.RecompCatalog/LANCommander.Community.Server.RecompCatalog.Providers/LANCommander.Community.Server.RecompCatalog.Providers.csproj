@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <RootNamespace>LANCommander.Community.Server.RecompCatalog.Providers</RootNamespace>
-    <AssemblyName>LANCommander.RecompCatalog.Providers</AssemblyName>
+    <AssemblyName>LANCommander.Community.Server.RecompCatalog.Providers</AssemblyName>
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="LANCommander.RecompCatalog.Tests" />
+    <InternalsVisibleTo Include="LANCommander.Community.Server.RecompCatalog.Tests" />
   </ItemGroup>
 
 </Project>

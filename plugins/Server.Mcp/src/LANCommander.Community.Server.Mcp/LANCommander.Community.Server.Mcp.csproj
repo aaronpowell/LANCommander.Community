@@ -6,14 +6,15 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <IsPackable>true</IsPackable>
     <RootNamespace>LANCommander.Community.Server.Mcp</RootNamespace>
-    <AssemblyName>LANCommander.Mcp</AssemblyName>
-    <PackageId>LANCommander.Mcp</PackageId>
+    <AssemblyName>LANCommander.Community.Server.Mcp</AssemblyName>
+    <PackageId>LANCommander.Community.Server.Mcp</PackageId>
     <Authors>aaronpowell</Authors>
     <Description>Administrator-only MCP catalog management for LANCommander servers.</Description>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/aaronpowell/LANCommander.Community</RepositoryUrl>
     <PackageProjectUrl>https://github.com/aaronpowell/LANCommander.Community/tree/main/plugins/Server.Mcp</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>LANCommander;plugin;server;mcp</PackageTags>
     <PackageType>LANCommander.Plugin;LANCommander.Plugin.Server</PackageType>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
     <!-- The host installs the bundled lib folder, not NuGet dependency groups. -->

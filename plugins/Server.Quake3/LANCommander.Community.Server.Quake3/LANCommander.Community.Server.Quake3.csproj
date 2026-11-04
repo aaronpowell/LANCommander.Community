@@ -7,6 +7,7 @@
     <Description>Native LANCommander administration of associated Quake 3 servers.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/aaronpowell/LANCommander.Community</RepositoryUrl>
     <PackageType>LANCommander.Plugin;LANCommander.Plugin.Server</PackageType>
     <PackageTags>LANCommander;plugin;server;quake3</PackageTags>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>

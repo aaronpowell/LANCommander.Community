@@ -8,17 +8,39 @@ $ErrorActionPreference = 'Stop'
 $package = Get-Item -LiteralPath $PackagePath
 $archive = [System.IO.Compression.ZipFile]::OpenRead($package.FullName)
 try {
-    $packageId = 'LANCommander.RecompCatalog.Plugin'
+    $packageId = 'LANCommander.Community.Server.RecompCatalog.Plugin'
     $expected = @(
-        'LANCommander.RecompCatalog.Core.dll',
-        'LANCommander.RecompCatalog.Infrastructure.dll',
-        'LANCommander.RecompCatalog.Plugin.dll',
-        'LANCommander.RecompCatalog.Providers.dll'
+        'LANCommander.Community.Server.RecompCatalog.Core.dll',
+        'LANCommander.Community.Server.RecompCatalog.Infrastructure.dll',
+        'LANCommander.Community.Server.RecompCatalog.Plugin.dll',
+        'LANCommander.Community.Server.RecompCatalog.Providers.dll'
     ) | ForEach-Object { "lib/net10.0/$_" }
     $actual = @($archive.Entries | Where-Object { $_.FullName.StartsWith('lib/') -and $_.Name } |
         ForEach-Object FullName | Sort-Object)
     if (Compare-Object @($expected | Sort-Object) $actual) {
         throw "Unexpected Recomp Catalog payload. Expected only: $($expected -join ', '). Found: $($actual -join ', ')."
+    }
+
+    foreach ($assemblyName in @(
+        'LANCommander.Community.Server.RecompCatalog.Core',
+        'LANCommander.Community.Server.RecompCatalog.Infrastructure',
+        'LANCommander.Community.Server.RecompCatalog.Plugin',
+        'LANCommander.Community.Server.RecompCatalog.Providers'
+    )) {
+        $entry = $archive.GetEntry("lib/net10.0/$assemblyName.dll")
+        $temporaryAssembly = Join-Path ([IO.Path]::GetTempPath()) "$([Guid]::NewGuid().ToString('N')).dll"
+        try {
+            $source = $entry.Open()
+            $destination = [IO.File]::Create($temporaryAssembly)
+            try { $source.CopyTo($destination) } finally { $destination.Dispose(); $source.Dispose() }
+            $actualAssemblyName = [Reflection.AssemblyName]::GetAssemblyName($temporaryAssembly).Name
+            if ($actualAssemblyName -cne $assemblyName) {
+                throw "Assembly simple name '$actualAssemblyName' does not match '$assemblyName'."
+            }
+        }
+        finally {
+            Remove-Item -LiteralPath $temporaryAssembly -Force -ErrorAction SilentlyContinue
+        }
     }
 
     $nuspecEntry = $archive.GetEntry("$packageId.nuspec")

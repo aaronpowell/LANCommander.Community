@@ -8,12 +8,12 @@ $ErrorActionPreference = 'Stop'
 $package = Get-Item -LiteralPath $PackagePath
 $archive = [System.IO.Compression.ZipFile]::OpenRead($package.FullName)
 try {
-    $root = 'Plugins/LanCommander.HomeAssistant.Plugin/'
+    $root = 'Plugins/LANCommander.Community.Launcher.MQTT.Plugin/'
     $required = @(
-        "$($root)LanCommander.HomeAssistant.Plugin.dll",
-        "$($root)LanCommander.HomeAssistant.Plugin.deps.json",
-        "$($root)LanCommander.HomeAssistant.Core.dll",
-        "$($root)LanCommander.HomeAssistant.Mqtt.dll",
+        "$($root)LANCommander.Community.Launcher.MQTT.Plugin.dll",
+        "$($root)LANCommander.Community.Launcher.MQTT.Plugin.deps.json",
+        "$($root)LANCommander.Community.Launcher.MQTT.Core.dll",
+        "$($root)LANCommander.Community.Launcher.MQTT.Transport.dll",
         "$($root)MQTTnet.dll",
         "$($root)homeassistant.json",
         'package-manifest.json',

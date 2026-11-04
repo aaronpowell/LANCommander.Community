@@ -9,9 +9,25 @@ $ErrorActionPreference = 'Stop'
 $package = Get-Item -LiteralPath $PackagePath
 $archive = [System.IO.Compression.ZipFile]::OpenRead($package.FullName)
 try {
+    $assemblyEntry = $archive.GetEntry('lib/net10.0/LANCommander.Community.Server.Mcp.dll')
+    if (-not $assemblyEntry) { throw 'Missing LANCommander.Community.Server.Mcp plugin assembly.' }
+    $temporaryAssembly = Join-Path ([IO.Path]::GetTempPath()) "$([Guid]::NewGuid().ToString('N')).dll"
+    try {
+        $source = $assemblyEntry.Open()
+        $destination = [IO.File]::Create($temporaryAssembly)
+        try { $source.CopyTo($destination) } finally { $destination.Dispose(); $source.Dispose() }
+        $actualAssemblyName = [Reflection.AssemblyName]::GetAssemblyName($temporaryAssembly).Name
+        if ($actualAssemblyName -cne 'LANCommander.Community.Server.Mcp') {
+            throw "Assembly simple name '$actualAssemblyName' does not match the project name."
+        }
+    }
+    finally {
+        Remove-Item -LiteralPath $temporaryAssembly -Force -ErrorAction SilentlyContinue
+    }
+
     $files = @($archive.Entries | ForEach-Object { $_.FullName })
     $expectedDlls = @(
-        'LANCommander.Mcp.dll',
+        'LANCommander.Community.Server.Mcp.dll',
         'Microsoft.Extensions.AI.Abstractions.dll',
         'ModelContextProtocol.AspNetCore.dll',
         'ModelContextProtocol.Core.dll',
@@ -28,8 +44,8 @@ try {
     }
 
     foreach ($required in @(
-        'LANCommander.Mcp.deps.json',
-        'LANCommander.Mcp.runtimeconfig.json',
+        'LANCommander.Community.Server.Mcp.deps.json',
+        'LANCommander.Community.Server.Mcp.runtimeconfig.json',
         'LICENSE',
         'THIRD-PARTY-NOTICES.txt',
         'licenses/MCP.txt',
@@ -40,7 +56,7 @@ try {
         }
     }
 
-    $reader = [System.IO.StreamReader]::new($archive.GetEntry('lib/net10.0/LANCommander.Mcp.deps.json').Open())
+    $reader = [System.IO.StreamReader]::new($archive.GetEntry('lib/net10.0/LANCommander.Community.Server.Mcp.deps.json').Open())
     try { $manifest = $reader.ReadToEnd() | ConvertFrom-Json -AsHashtable } finally { $reader.Dispose() }
     foreach ($target in $manifest.targets.Values) {
         foreach ($library in $target.GetEnumerator()) {
@@ -64,11 +80,11 @@ try {
         }
     }
 
-    $reader = [System.IO.StreamReader]::new($archive.GetEntry('LANCommander.Mcp.nuspec').Open())
+    $reader = [System.IO.StreamReader]::new($archive.GetEntry('LANCommander.Community.Server.Mcp.nuspec').Open())
     try { [xml] $nuspec = $reader.ReadToEnd() } finally { $reader.Dispose() }
-    if ($nuspec.package.metadata.id -cne 'LANCommander.Mcp' -or
+    if ($nuspec.package.metadata.id -cne 'LANCommander.Community.Server.Mcp' -or
         $nuspec.package.metadata.version -cne $ExpectedVersion) {
-        throw "Package identity/version mismatch: $($nuspec.package.metadata.id) $($nuspec.package.metadata.version); expected LANCommander.Mcp $ExpectedVersion."
+        throw "Package identity/version mismatch: $($nuspec.package.metadata.id) $($nuspec.package.metadata.version); expected LANCommander.Community.Server.Mcp $ExpectedVersion."
     }
     $types = @($nuspec.package.metadata.packageTypes.packageType | ForEach-Object { $_.name })
     if ('LANCommander.Plugin' -notin $types -or 'LANCommander.Plugin.Server' -notin $types) {
