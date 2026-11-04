@@ -32,7 +32,7 @@ selected remotely. The first eight chosen games retain their old launch-button I
 all-game exposure does not create thousands of buttons.
 Plans that would reinstall/modify an already-installed dependency are rejected too;
 complete those addon/dependency cases locally rather than allowing unintended
-changes through alpha.4's installed-game queue branch.
+changes through the host's installed-game queue branch.
 
 The host-independent coordinator enforces bounded JSON commands (`requestId`,
 `action`, `gameId`, `issuedAt`, `expiresAt`), a 30-second maximum lifetime,
@@ -42,7 +42,7 @@ rejects new requests rather than evicting valid IDs. Accepted is not completed;
 install success requires terminal queue status and an installed record/manifest.
 Launch completion means the normal LC run returned, not an exit-code verdict.
 
-The source-pinned adapter and MQTT transport are now implemented as well. The host adapter builds against the exact `v2.2.0-alpha.4` source tree, starts only in the GUI launcher, and keeps a fresh service scope alive for the full `GameService.Run` task. It launches only one unambiguous primary action for an allowlisted, already-installed game. Matching published host packages were not available, so the build intentionally uses source project references rather than guessing or silently downgrading package versions.
+The source-pinned adapter and MQTT transport are now implemented as well. The host adapter builds against the exact `v2.2.0-beta.3` source tree, starts only in the GUI launcher, and keeps a fresh service scope alive for the full `GameService.Run` task. It launches only one unambiguous primary action for an allowlisted, already-installed game. The adapter retains verified source project references for its launcher service contracts and host-loader tests.
 
 The MQTT client uses authenticated MQTT 5, clean sessions, non-retained commands/results,
 retained discovery/state and last will, bounded ingress and reconnect/HA-birth replay.
@@ -106,14 +106,14 @@ The ZIP contains `Plugins\LanCommander.HomeAssistant.Plugin`, a configuration
 template, a [test guide](examples/TEST-GUIDE.md), sample HA script, dependency
 license and SHA-256 inventory. Copy its plugin folder to the Launcher's existing
 **data/config root** under `Plugins`, not necessarily beside the executable.
-It targets alpha.4 source commit `4c8c73e47da6d4198c6153cc93ca7bb480d30abe`.
+It targets beta.3 source commit `9eefa639a904059c0a03f39e7908332f468828af`.
 
 ## Configure and build the source-pinned plugin
 
 1. Copy the package to the Launcher data root (see the [test guide](examples/TEST-GUIDE.md)), start the GUI and configure it in Launcher settings. Alternatively copy `src\LANCommander.Community.Launcher.MQTT.Plugin\homeassistant.example.json` to the plugin's `homeassistant.json` and fill it in locally. `ExposureMode` is `"selected"` (default; `Favorites` is the UUID/title allowlist, now unlimited) or `"all"` (the authenticated visible library). An empty selection safely exposes no games.
 2. Set `UseTls` to `false` for plaintext MQTT (usually port `1883`), or `true` for TLS (usually port `8883`). Use the port configured on your broker; it is not changed automatically. Certificate errors are ignored when TLS is enabled. Existing configurations must add `BrokerUsername` and `BrokerPassword`; no Credential Manager entry is read.
 3. Use the repository validation command to materialize the pinned LANCommander
-   `v2.2.0-alpha.4` source commit and run the core/loader/template tests:
+   `v2.2.0-beta.3` source commit and run the core/loader/template tests:
 
    ```powershell
    pwsh .\eng\Validate-Plugin.ps1 -Plugin Launcher.MQTT -OutputDirectory "C:\path\to\new-artifact-folder"
@@ -150,7 +150,7 @@ and `command/install_selected` require matching actions and an empty UUID
 `00000000-0000-0000-0000-000000000000`. All use the same request ID/time envelope.
 Selected-action results contain the resolved UUID. Do not retain any command.
 
-To repeat the alpha.4 host-loader check after building the plugin:
+To repeat the beta.3 host-loader check after building the plugin:
 
 ```powershell
 $env:LANCOMMANDER_SOURCE_ROOT = "C:\path\to\LANCommander"

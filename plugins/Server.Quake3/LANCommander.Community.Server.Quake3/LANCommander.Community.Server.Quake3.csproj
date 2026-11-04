@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <RootNamespace>LANCommander.Community.Server.Quake3</RootNamespace>
+    <AssemblyName>LANCommander.Community.Server.Quake3</AssemblyName>
+    <PackageId>LANCommander.Community.Server.Quake3</PackageId>
+    <IsPackable>true</IsPackable>
+    <Description>Native LANCommander administration of associated Quake 3 servers.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageType>LANCommander.Plugin;LANCommander.Plugin.Server</PackageType>
+    <PackageTags>LANCommander;plugin;server;quake3</PackageTags>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <StaticWebAssetsEnabled>false</StaticWebAssetsEnabled>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);PackQuakeCore</TargetsForTfmSpecificBuildOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <InternalsVisibleTo Include="LANCommander.Community.Server.Quake3.Host.Tests" />
+    <ProjectReference Include="..\LANCommander.Community.Server.Quake3.Core\LANCommander.Community.Server.Quake3.Core.csproj" />
+    <PackageReference Include="LANCommander.SDK" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="LANCommander.Server.Plugins" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="LANCommander.Server.UI" ExcludeAssets="runtime" PrivateAssets="all" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <Target Name="PackQuakeCore" DependsOnTargets="ResolveReferences">
+    <ItemGroup>
+      <BuildOutputInPackage Include="$(OutDir)LANCommander.Community.Server.Quake3.Core.dll" />
+    </ItemGroup>
+  </Target>
+</Project>

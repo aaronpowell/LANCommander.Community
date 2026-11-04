@@ -10,6 +10,8 @@ projects and releases.
   LANCommander catalog management.
 - [Server.RecompCatalog](plugins/Server.RecompCatalog/README.md) — browse a
   compatible catalog and prepare game imports.
+- [Server.Quake3](plugins/Server.Quake3/README.md) — native Quake 3 server
+  administration (requires LANCommander Server 2.2.0-beta.3 or later).
 - [Launcher.MQTT](plugins/Launcher.MQTT/README.md) — MQTT command and state
   integration for the LANCommander GUI Launcher, including Home Assistant
   discovery.
@@ -40,7 +42,7 @@ Validate a single plugin and create its local install artifact with
 `eng/Validate-Plugin.ps1`, selecting a component from the registry:
 
 ```powershell
-pwsh .\eng\Validate-Plugin.ps1 -Plugin <Server.Mcp|Server.RecompCatalog|Launcher.MQTT> -OutputDirectory <new-output-directory>
+pwsh .\eng\Validate-Plugin.ps1 -Plugin <Server.Mcp|Server.RecompCatalog|Launcher.MQTT|Server.Quake3> -OutputDirectory <new-output-directory>
 ```
 
 The output directory must not already exist. See each plugin README for its

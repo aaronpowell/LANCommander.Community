@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT')]
+    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT', 'Server.Quake3')]
     [string] $Plugin,
     [Parameter(Mandatory)][string] $Tag,
     [Parameter(Mandatory)][string] $ArtifactDirectory,
@@ -14,6 +14,9 @@ $repositoryRoot = Split-Path $PSScriptRoot -Parent
 Import-Module (Join-Path $PSScriptRoot 'PluginRelease.psm1') -Force
 $selection = @(Resolve-PluginSelection -Tag $Tag -Plugins @($Plugin))[0]
 $component = @(Get-PluginRegistry | Where-Object key -CEQ $Plugin)[0]
+if ($component.releaseBlockedReason) {
+    throw "$Plugin cannot be released: $($component.releaseBlockedReason)"
+}
 $headCommit = (& git -C $repositoryRoot rev-parse HEAD).Trim()
 $tagCommit = (& git -C $repositoryRoot rev-parse "$Tag^{commit}").Trim()
 if ($LASTEXITCODE -ne 0 -or $headCommit -cne $tagCommit) {
@@ -29,6 +32,9 @@ if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
     throw 'The verified release manifest is missing.'
 }
 $manifest = Get-Content -LiteralPath $manifestPath -Raw | ConvertFrom-Json
+if ($manifest.sourceDirty -eq $true) {
+    throw 'Development artifacts built from uncommitted source cannot be published as a reviewed release.'
+}
 if ($manifest.component -cne $Plugin -or $manifest.version -cne $selection.version -or
     $manifest.sourceCommit -cne $tagCommit) {
     throw "Release manifest does not match $Plugin $($selection.version)."

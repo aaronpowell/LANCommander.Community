@@ -1,0 +1,207 @@
+@page "/Plugins/Quake3"
+@attribute [PluginAccess(PluginAccessLevel.Administrator)]
+@implements IDisposable
+@inject Quake3Administration Administration
+@inject Microsoft.Extensions.Logging.ILogger<Index> Logger
+
+<PageTitle>Quake 3</PageTitle>
+<PageHeader Title="Quake 3" Subtitle="Match administration for associated game servers" />
+<PageContent>
+    <Alert Info Title="Game administration only">
+        Manage containers, volumes, startup arguments and consoles through LC's Docker plugin.
+        Restart match below does not restart the container.
+    </Alert>
+    @if (_error is not null)
+    {
+        <Alert Danger Title="Operation failed">@_error</Alert>
+    }
+    @if (_message is not null)
+    {
+        <Alert Info Title="Command result">@_message</Alert>
+    }
+    <Card Title="Associated LC server">
+        <label for="quake-server">Server</label>
+        <select id="quake-server" value="@_serverId" @onchange="ServerChanged" disabled="@_busy">
+            <option value="">Choose a server</option>
+            @foreach (var server in _servers)
+            {
+                <option value="@server.Id">@server.Name</option>
+            }
+        </select>
+        @if (_servers.Count == 0 && !_busy)
+        {
+            <p>No associated servers. Configure Plugins:Quake3:Servers on the LC host.</p>
+        }
+        <Button Disabled="@(_busy || _serverId == Guid.Empty)" OnClick="RefreshAsync">Refresh catalogue and status</Button>
+    </Card>
+    @if (_busy)
+    {
+        <Spin Tip="Contacting selected server..." />
+    }
+    @if (_view is not null)
+    {
+        @if (_view.StartupWarning is not null)
+        {
+            <Alert Warning Title="Startup and live state need reconciliation">@_view.StartupWarning</Alert>
+        }
+        <Card Title="@(_view.Online ? "Online - RCON acknowledged" : "RCON unavailable")">
+            <pre>@_view.Status</pre>
+        </Card>
+        @if (_view.CatalogIsStale || !_view.CatalogKnown)
+        {
+            <Alert Warning Title="@(_view.CatalogKnown ? "Last-known catalogue (stale)" : "Catalogue unavailable")">
+                @_view.CatalogError
+                Configuration apply, preset save and map change require a current catalogue.
+            </Alert>
+        }
+        <Card Title="Match configuration">
+            <fieldset disabled="@_busy">
+                <label for="quake-mode">Mode</label>
+                <select id="quake-mode" @bind="_mode">
+                    <option value="0">Free for all</option>
+                    <option value="1">Duel</option>
+                    <option value="3">Team deathmatch</option>
+                    <option value="4">Capture the flag</option>
+                </select>
+                <label for="quake-time">Time limit (0-120)</label>
+                <input id="quake-time" type="number" min="0" max="120" @bind="_time" />
+                <label for="quake-frags">Frag limit (0-1000)</label>
+                <input id="quake-frags" type="number" min="0" max="1000" @bind="_frags" />
+                <label for="quake-captures">Capture limit (0-100)</label>
+                <input id="quake-captures" type="number" min="0" max="100" @bind="_captures" />
+            </fieldset>
+            <p>Zero disables a limit. Apply saves startup settings and starts the first rotation map.</p>
+            <label for="quake-map-filter">Find installed maps</label>
+            <input id="quake-map-filter" type="search" @bind="_mapFilter" @bind:event="oninput" disabled="@_busy" />
+            <label for="quake-map">Installed map</label>
+            <select id="quake-map" @bind="_map" disabled="@_busy">
+                <option value="">Choose a map</option>
+                @foreach (var map in _view.Maps.Where(m => m.Contains(_mapFilter, StringComparison.OrdinalIgnoreCase)))
+                {
+                    <option value="@map">@map</option>
+                }
+            </select>
+            <Button Disabled="@(_busy || _map.Length == 0 || _rotation.Count >= 32)" OnClick="AddMap">Add to rotation</Button>
+            <ol>
+                @for (var i = 0; i < _rotation.Count; i++)
+                {
+                    var index = i;
+                    <li>
+                        @_rotation[index]
+                        <Button Small Disabled="@(_busy || index == 0)" OnClick="() => MoveMap(index, -1)">Up</Button>
+                        <Button Small Disabled="@(_busy || index == _rotation.Count - 1)" OnClick="() => MoveMap(index, 1)">Down</Button>
+                        <Button Small Disabled="@_busy" OnClick="() => RemoveMap(index)">Remove</Button>
+                    </li>
+                }
+            </ol>
+            <Button Primary Disabled="@(_busy || !CurrentCatalogue || _rotation.Count == 0)" OnClick="ApplyAsync">Save startup and apply</Button>
+        </Card>
+        <Card Title="Presets">
+            <label for="quake-preset-name">Preset name (1-48 characters)</label>
+            <input id="quake-preset-name" maxlength="48" @bind="_presetName" disabled="@_busy" />
+            <Button Disabled="@(_busy || !CurrentCatalogue)" OnClick="SavePresetAsync">Save preset without applying</Button>
+            <label for="quake-preset">Saved preset</label>
+            <select id="quake-preset" @bind="_preset" disabled="@_busy">
+                <option value="">Choose a preset</option>
+                @foreach (var name in _view.Presets.Keys.Order(StringComparer.Ordinal))
+                {
+                    <option value="@name">@name</option>
+                }
+            </select>
+            <Button Disabled="@(_busy || !_view.Presets.ContainsKey(_preset))" OnClick="LoadPreset">Load into editor</Button>
+        </Card>
+        <Card Title="Running match actions">
+            <Button Disabled="@(_busy || _view.Active is null)" OnClick="NextAsync">Next map</Button>
+            <Button Disabled="@(_busy || !CurrentCatalogue || _map.Length == 0)" OnClick="ChangeMapAsync">Change map now</Button>
+            <Button Disabled="@_busy" OnClick="RestartAsync">Restart match</Button>
+            <p>These commands do not change the saved startup configuration.</p>
+        </Card>
+    }
+</PageContent>
+
+@code {
+    private readonly CancellationTokenSource _lifetime = new();
+    private IReadOnlyList<AssociatedServer> _servers = [];
+    private Guid _serverId;
+    private Quake3View? _view;
+    private bool _busy;
+    private string? _error;
+    private string? _message;
+    private int _mode, _time = 15, _frags = 30, _captures = 8;
+    private List<string> _rotation = ["q3dm17"];
+    private string _map = "", _mapFilter = "", _preset = "", _presetName = "";
+    private bool CurrentCatalogue => _view is { CatalogKnown: true, CatalogIsStale: false };
+
+    protected override Task OnInitializedAsync() => RunAsync(async token =>
+        _servers = await Administration.GetServersAsync(token));
+
+    private async Task ServerChanged(ChangeEventArgs args)
+    {
+        if (_busy) return;
+        _serverId = Guid.TryParse(args.Value?.ToString(), out var id) ? id : Guid.Empty;
+        _view = null;
+        _message = null;
+        _map = _preset = _presetName = _mapFilter = "";
+        if (_serverId == Guid.Empty) return;
+        await RunAsync(async token =>
+        {
+            _view = await Administration.GetSnapshotAsync(_serverId, false, token);
+            Edit(_view.StartupConfiguration ?? _view.Active ?? MatchConfigurationView.Default);
+        });
+    }
+
+    private Task RefreshAsync() => RunAsync(async token =>
+        _view = await Administration.GetSnapshotAsync(_serverId, true, token));
+
+    private MatchConfigurationView Configuration() => new(_mode, _time, _frags, _captures, _rotation.ToArray());
+    private Task ApplyAsync() => MutateAsync(token => Administration.ApplyAsync(_serverId, Configuration(), token));
+    private Task SavePresetAsync() => MutateAsync(token => Administration.SavePresetAsync(_serverId, _presetName, Configuration(), token));
+    private Task NextAsync() => MutateAsync(token => Administration.NextAsync(_serverId, token));
+    private Task RestartAsync() => MutateAsync(token => Administration.RestartAsync(_serverId, token));
+    private Task ChangeMapAsync() => MutateAsync(token => Administration.ChangeMapAsync(_serverId, _map, token));
+
+    private Task MutateAsync(Func<CancellationToken, Task<AdministrationResult>> operation) =>
+        RunAsync(async token =>
+        {
+            var result = await operation(token);
+            if (result.Failed) _error = result.Message;
+            else _message = result.Message;
+            _view = await Administration.GetSnapshotAsync(_serverId, false, token);
+        });
+
+    private async Task RunAsync(Func<CancellationToken, Task> operation)
+    {
+        if (_busy) return;
+        _busy = true;
+        _error = _message = null;
+        try { await operation(_lifetime.Token); }
+        catch (OperationCanceledException) when (_lifetime.IsCancellationRequested) { }
+        catch (Exception exception) when (exception is IOException or InvalidOperationException
+            or ArgumentException or UnauthorizedAccessException or RconException
+            or QuakeCatalogueException or QuakePersistenceException)
+        {
+            Logger.LogWarning(exception, "Quake administration operation failed for server {ServerId}", _serverId);
+            _error = exception.Message;
+        }
+        finally { _busy = false; }
+    }
+
+    private void Edit(MatchConfigurationView config)
+    {
+        (_mode, _time, _frags, _captures) = (config.Mode, config.TimeLimit, config.FragLimit, config.CaptureLimit);
+        _rotation = config.Rotation.ToList();
+    }
+    private void LoadPreset()
+    {
+        if (!_busy && _view is not null && _view.Presets.TryGetValue(_preset, out var config))
+            Edit(config);
+    }
+    private void AddMap() { if (!_busy && _map.Length > 0 && _rotation.Count < 32) _rotation.Add(_map); }
+    private void RemoveMap(int index) { if (!_busy) _rotation.RemoveAt(index); }
+    private void MoveMap(int index, int delta)
+    {
+        if (!_busy && index + delta >= 0 && index + delta < _rotation.Count)
+            (_rotation[index], _rotation[index + delta]) = (_rotation[index + delta], _rotation[index]);
+    }
+    public void Dispose() { _lifetime.Cancel(); _lifetime.Dispose(); }
+}

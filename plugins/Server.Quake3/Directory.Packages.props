@@ -1,0 +1,11 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Packages.props" />
+  <PropertyGroup>
+    <Quake3HostPackageVersion>2.2.0-beta.3</Quake3HostPackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Update="LANCommander.SDK" Version="$(Quake3HostPackageVersion)" />
+    <PackageVersion Update="LANCommander.Server.Plugins" Version="$(Quake3HostPackageVersion)" />
+    <PackageVersion Update="LANCommander.Server.UI" Version="$(Quake3HostPackageVersion)" />
+  </ItemGroup>
+</Project>

@@ -2,6 +2,25 @@
   "schemaVersion": 1,
   "plugins": [
     {
+      "key": "Server.Quake3",
+      "tagPrefix": "server-quake3",
+      "versionFile": "plugins/Server.Quake3/version.txt",
+      "project": "plugins/Server.Quake3/LANCommander.Community.Server.Quake3/LANCommander.Community.Server.Quake3.csproj",
+      "tests": [
+        "plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Tests/LANCommander.Community.Server.Quake3.Tests.csproj",
+        "plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Host.Tests/LANCommander.Community.Server.Quake3.Host.Tests.csproj"
+      ],
+      "rootNamespace": "LANCommander.Community.Server.Quake3",
+      "packageId": "LANCommander.Community.Server.Quake3",
+      "assemblyName": "LANCommander.Community.Server.Quake3",
+      "host": "Server",
+      "minimumHostVersion": "2.2.0-beta.3",
+      "maximumHostVersion": null,
+      "hostPackageVersion": "2.2.0-beta.3",
+      "hostSourceCommit": "9eefa639a904059c0a03f39e7908332f468828af",
+      "artifactFormat": "nupkg"
+    },
+    {
       "key": "Server.Mcp",
       "tagPrefix": "server-mcp",
       "versionFile": "plugins/Server.Mcp/version.txt",
@@ -13,7 +32,7 @@
       "packageId": "LANCommander.Mcp",
       "assemblyName": "LANCommander.Mcp",
       "host": "Server",
-      "minimumHostVersion": "2.2.0-alpha.4",
+      "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": null,
       "artifactFormat": "nupkg"
     },
@@ -29,7 +48,7 @@
       "packageId": "LANCommander.RecompCatalog.Plugin",
       "assemblyName": "LANCommander.RecompCatalog.Plugin",
       "host": "Server",
-      "minimumHostVersion": "2.2.0-alpha.3",
+      "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": null,
       "artifactFormat": "nupkg"
     },
@@ -46,8 +65,8 @@
       "packageId": "LanCommander.HomeAssistant.Plugin",
       "assemblyName": "LanCommander.HomeAssistant.Plugin",
       "host": "Launcher",
-      "minimumHostVersion": "2.2.0-alpha.4",
-      "maximumHostVersion": "2.2.0-alpha.4",
+      "minimumHostVersion": "2.2.0-beta.3",
+      "maximumHostVersion": "2.2.0-beta.3",
       "artifactFormat": "zip"
     }
   ]

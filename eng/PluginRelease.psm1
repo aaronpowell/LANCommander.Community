@@ -1,7 +1,7 @@
 function Get-PluginRegistry {
     $path = Join-Path (Split-Path $PSScriptRoot -Parent) 'eng\plugins.json'
     $registry = Get-Content -LiteralPath $path -Raw | ConvertFrom-Json
-    if ($registry.schemaVersion -ne 1 -or @($registry.plugins).Count -ne 3) {
+    if ($registry.schemaVersion -ne 1 -or @($registry.plugins).Count -ne 4) {
         throw "Unsupported or incomplete plugin registry: $path"
     }
 

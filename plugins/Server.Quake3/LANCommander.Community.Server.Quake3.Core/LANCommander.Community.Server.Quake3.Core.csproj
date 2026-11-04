@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>LANCommander.Community.Server.Quake3.Core</RootNamespace>
+    <AssemblyName>LANCommander.Community.Server.Quake3.Core</AssemblyName>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

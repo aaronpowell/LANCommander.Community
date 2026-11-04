@@ -11,7 +11,7 @@ remains `io.github.aaronpowell.lancommander.mcp`.
 
 ## Requirements
 
-- LANCommander server **2.2.0-alpha.4 or later** with the server plugin framework.
+- LANCommander server **2.2.0-beta.3 or later** with the server plugin framework.
 - .NET 10 SDK to build.
 - An MCP client supporting Streamable HTTP and an administrator's LANCommander bearer token.
 

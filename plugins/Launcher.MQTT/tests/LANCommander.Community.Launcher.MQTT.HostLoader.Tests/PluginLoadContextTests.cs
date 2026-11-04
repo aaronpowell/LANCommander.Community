@@ -24,7 +24,7 @@ public sealed class PluginLoadContextTests
         var services = new ServiceCollection().AddLogging();
         var loader = new PluginLoaderService();
         loader.DiscoverAndConfigure(services, PluginHost.Launcher,
-            Path.GetDirectoryName(directory)!, "2.2.0-alpha.4", NullLogger.Instance);
+            Path.GetDirectoryName(directory)!, "2.2.0-beta.3", NullLogger.Instance);
         var loaded = Assert.Single(loader.Plugins);
         Assert.Equal("com.aaronpowell.lancommander.homeassistant", loaded.Plugin.Id);
         Assert.Contains(services, descriptor => descriptor.ServiceType.FullName == typeof(HomeAssistantRuntime).FullName
@@ -54,6 +54,8 @@ public sealed class PluginLoadContextTests
         var pluginDirectory = Path.GetDirectoryName(pluginPath!)!;
 
         Assert.NotNull(manifest);
+        Assert.Equal("2.2.0-beta.3", manifest.MinHostVersion);
+        Assert.Equal("2.2.0-beta.3", manifest.MaxHostVersion);
         Assert.True(typeof(IPlugin).IsAssignableFrom(manifest!.EntryPoint));
         var plugin = Activator.CreateInstance(manifest.EntryPoint) as IPlugin;
         Assert.Equal("com.aaronpowell.lancommander.homeassistant", plugin?.Id);

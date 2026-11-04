@@ -19,6 +19,11 @@ metadata. Keep these values consistent when changing the registry.
 | `Server.Mcp` | `plugins/Server.Mcp/version.txt` | `plugins/Server.Mcp/CHANGELOG.md` | `server-mcp-v<version>` | `LANCommander.Mcp.<version>.nupkg` |
 | `Server.RecompCatalog` | `plugins/Server.RecompCatalog/version.txt` | `plugins/Server.RecompCatalog/CHANGELOG.md` | `server-recompcatalog-v<version>` | `LANCommander.RecompCatalog.Plugin.<version>.nupkg` |
 | `Launcher.MQTT` | `plugins/Launcher.MQTT/version.txt` | `plugins/Launcher.MQTT/CHANGELOG.md` | `launcher-mqtt-v<version>` | `launcher-mqtt-<version>.zip` |
+| `Server.Quake3` | `plugins/Server.Quake3/version.txt` | `plugins/Server.Quake3/CHANGELOG.md` | `server-quake3-v<version>` | `LANCommander.Community.Server.Quake3.<version>.nupkg` |
+
+All components target LANCommander `2.2.0-beta.3`. Server components use
+published NuGet packages; Launcher.MQTT uses the matching pinned host source.
+`Server.Quake3` keeps an isolated package version property at the same baseline.
 
 Use complete SemVer in `version.txt`, including prerelease identifiers when
 applicable. The tag must contain that exact version, and the changelog must
@@ -64,11 +69,11 @@ python -m pip install -r plugins/Launcher.MQTT/tests/ha-template-requirements.tx
 
 `eng/Prepare-LANCommanderSource.ps1` materializes the launcher host source from
 `eng/lancommander-source.json`, pinned to commit
-`4c8c73e47da6d4198c6153cc93ca7bb480d30abe` (LANCommander
-`v2.2.0-alpha.4`). `eng/Build-Plugin.ps1` and launcher validation verify that
+`9eefa639a904059c0a03f39e7908332f468828af` (LANCommander
+`v2.2.0-beta.3`). `eng/Build-Plugin.ps1` and launcher validation verify that
 pin; a mutable local checkout is not a substitute. Keep host-provided
 assemblies excluded from the launcher ZIP and bundle only the plugin's private
-dependencies. Server packages use the central LANCommander `2.2.0-alpha.4`
+dependencies. Server packages use the LANCommander `2.2.0-beta.3`
 NuGet baseline and retain the runtime exclusions and loader-identity checks
 covered by their package tests.
 
@@ -141,7 +146,7 @@ can succeed or fail independently.
 For launcher changes, update the source pin and project references together
 only after checking the actual upstream source contracts. Do not replace
 unavailable host contracts with guessed NuGet adapters. The launcher currently
-targets exactly LANCommander `2.2.0-alpha.4`; registry compatibility metadata
+targets exactly LANCommander `2.2.0-beta.3`; registry compatibility metadata
 and package/loader tests must agree with any intentional compatibility change.
 
 ## Failures, retries, and immutability
