@@ -4,7 +4,8 @@ param(
     [ValidateSet('Server.Mcp', 'Server.RecompCatalog')]
     [string] $Plugin,
     [Parameter(Mandatory)][string] $PackagePath,
-    [Parameter(Mandatory)][string] $ExpectedVersion
+    [Parameter(Mandatory)][string] $ExpectedVersion,
+    [switch] $RequireRepositoryUrl
 )
 
 $ErrorActionPreference = 'Stop'
@@ -56,6 +57,15 @@ try {
     foreach ($requiredTag in @($component.packageTags)) {
         if ($requiredTag -notin $tags) {
             throw "Package $($package.Name) is missing required search tag '$requiredTag'."
+        }
+    }
+
+    if ($RequireRepositoryUrl) {
+        $repositoryElement = $metadataFields['repository']
+        $repositoryUrl = if ($repositoryElement) { $repositoryElement.Attribute('url') }
+        if (-not $repositoryUrl -or
+            [string]$repositoryUrl.Value -cne 'https://github.com/aaronpowell/LANCommander.Community') {
+            throw "Package $($package.Name) must identify the canonical LANCommander.Community repository."
         }
     }
 }

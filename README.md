@@ -35,6 +35,7 @@ Run the repository checks:
 pwsh .\eng\Test-ReleaseSelection.ps1
 pwsh .\eng\Test-Repository.ps1
 pwsh .\eng\Test-NuGetPublication.ps1
+pwsh .\eng\Test-GitHubPackages.ps1
 ```
 
 Validate a single plugin and create its local install artifact with

@@ -25,7 +25,8 @@
       "host": "Server",
       "minimumHostVersion": "2.2.0-alpha.4",
       "maximumHostVersion": null,
-      "artifactFormat": "nupkg"
+      "artifactFormat": "nupkg",
+      "githubPackagesEligible": true
     },
     {
       "key": "Server.RecompCatalog",
@@ -52,7 +53,8 @@
       "host": "Server",
       "minimumHostVersion": "2.2.0-alpha.3",
       "maximumHostVersion": null,
-      "artifactFormat": "nupkg"
+      "artifactFormat": "nupkg",
+      "githubPackagesEligible": true
     },
     {
       "key": "Launcher.MQTT",
@@ -71,7 +73,8 @@
       "host": "Launcher",
       "minimumHostVersion": "2.2.0-alpha.4",
       "maximumHostVersion": "2.2.0-alpha.4",
-      "artifactFormat": "zip"
+      "artifactFormat": "zip",
+      "githubPackagesEligible": false
     }
   ]
 }

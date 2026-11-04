@@ -43,6 +43,14 @@ foreach ($plugin in $plugins) {
     if ($plugin.artifactFormat -eq 'nupkg' -and $expectedTypes.Count -eq 0) {
         throw "$($plugin.key) NuGet artifacts must declare their host package types."
     }
+    if ($plugin.githubPackagesEligible -isnot [bool] -or
+        ($plugin.githubPackagesEligible -and $plugin.artifactFormat -cne 'nupkg')) {
+        throw "$($plugin.key) GitHub Packages eligibility must be an explicit bool and only nupkg artifacts may be eligible."
+    }
+    if ($plugin.githubPackagesEligible -and
+        [string]$pluginProjectXml.Project.PropertyGroup.RepositoryUrl -cne 'https://github.com/aaronpowell/LANCommander.Community') {
+        throw "$($plugin.key) must link GitHub Packages to the canonical LANCommander.Community repository."
+    }
 }
 
 $allProjects = Get-ChildItem -LiteralPath (Join-Path $repositoryRoot 'plugins') -Filter '*.csproj' -File -Recurse

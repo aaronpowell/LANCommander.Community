@@ -114,8 +114,55 @@ SHA-256 hashes against the manifest and downloaded release assets. Once all
 three files are verified, the workflow changes the release from draft to
 published. This occurs automatically within the tag-triggered run; the
 workflow does not stop at a draft for a separate approval click. Tag-driven
-releases publish to this repository's GitHub Releases only; NuGet.org is never
-part of the tag-triggered path.
+releases publish to this repository's GitHub Releases only; neither NuGet.org
+nor GitHub Packages is part of the tag-triggered path.
+
+## Optional GitHub Packages distribution
+
+The server `.nupkg` components can also be published to the GitHub Packages
+NuGet feed. `Launcher.MQTT` produces a ZIP and is explicitly ineligible. This
+is a separate, manual second stage; a component tag or ordinary GitHub Release
+does not publish to GitHub Packages. The canonical allowlist is
+`githubPackagesEligible` in `eng/plugins.json`.
+
+The [Publish existing release to GitHub Packages](.github/workflows/publish-github-packages.yml)
+workflow must be dispatched from `main`. Select the exact already-published
+server component tag and leave **Confirm publication to GitHub Packages**
+unchecked to validate only. To publish, explicitly check that confirmation
+input. The workflow verifies the tag/version, published GitHub Release, exact
+release asset set, checksum, package identity and discovery metadata, source
+commit, and `main` ancestry before entering the job with `packages: write`.
+It downloads and promotes the exact `.nupkg` bytes already attached to the
+GitHub Release; it does not rebuild or publish a ZIP. `GITHUB_TOKEN` is used
+only in that publish job. The separate NuGet.org workflow and its required
+environment/API-key gate remain independent and unchanged.
+
+The NuGet feed is derived from the workflow repository owner, for example
+`https://nuget.pkg.github.com/aaronpowell/index.json`. Both server package
+projects declare the canonical
+`https://github.com/aaronpowell/LANCommander.Community` `RepositoryUrl`, which
+GitHub uses to connect published packages to this repository. This follows
+[GitHub's NuGet registry guidance](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-nuget-registry#publishing-a-package),
+which supports `GITHUB_TOKEN` for packages associated with the workflow
+repository and links packages through `RepositoryUrl`. No PAT, secret, external
+account, or environment must be configured for this workflow. GitHub
+Packages defaults a new package to private visibility; after a first
+authorized publication, maintainers must review package access and explicitly
+change visibility if public distribution is intended. If organizational
+settings disable automatic repository permission inheritance, configure the
+package's workflow access through GitHub's package settings.
+
+For retries, the workflow first checks whether the exact package version is
+already available. It treats an existing version as success only if every
+archive path and uncompressed entry hash matches the immutable GitHub Release
+asset. After a push (including an ambiguous push result), it polls the feed
+and performs the same comparison. It does not use `--skip-duplicate`, does
+not overwrite a differing version, and does not assume that GitHub Packages
+adds or removes a NuGet signature. A differing or unavailable package fails
+closed; investigate the feed and publish new content only under a new version
+and tag. This feed check is distinct from the NuGet.org retry path, which
+requires verifying NuGet.org's repository signature before comparing payload
+entries.
 
 ## Optional NuGet.org distribution
 
@@ -272,10 +319,13 @@ successful releases.
 ## Permissions and compatibility boundaries
 
 The tag-triggered workflow is granted `contents: write` to create the GitHub
-Release and upload its assets. The optional NuGet workflow is manual-only and
-uses `contents: read` plus the `nuget.org` environment secret after required
+Release and upload its assets. The optional GitHub Packages workflow is
+manual-only and grants `contents: read` plus `packages: write` only to its
+publish job after the explicit confirmation input. The optional NuGet.org
+workflow is manual-only and uses `contents: read` plus the `nuget.org`
+environment secret after required
 reviewer approval. A maintainer needs the repository permissions to merge the
-reviewed source to `main` and push the release tag. No NuGet environment,
+reviewed source to `main` and push the release tag. No NuGet.org environment,
 secret, account, or trusted publisher is configured. Do not grant broader
 permissions or perform a remote tag/release action without explicit
 authorization.
