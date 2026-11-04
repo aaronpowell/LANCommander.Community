@@ -38,7 +38,7 @@ public sealed class PackageLoaderTests
             var assembly = context.LoadFromStream(pluginStream);
             var attribute = assembly.GetCustomAttribute<LANCommanderPluginAttribute>();
             Assert.NotNull(attribute);
-            Assert.Equal("2.2.0-beta.1-fileaccess.local.1", attribute.MinHostVersion);
+            Assert.Equal("2.2.0-beta.3", attribute.MinHostVersion);
             Assert.Equal(PluginHost.Server, attribute.Hosts);
             var pluginType = Assert.Single(assembly.GetTypes(), t => typeof(IPlugin).IsAssignableFrom(t) && !t.IsAbstract);
             var plugin = Assert.IsAssignableFrom<IPlugin>(Activator.CreateInstance(pluginType));

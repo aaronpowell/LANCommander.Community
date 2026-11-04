@@ -14,11 +14,10 @@
       "packageId": "LANCommander.Community.Server.Quake3",
       "assemblyName": "LANCommander.Community.Server.Quake3",
       "host": "Server",
-      "minimumHostVersion": "2.2.0-beta.1-fileaccess.local.1",
+      "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": null,
-      "hostPackageVersion": "2.2.0-beta.1-fileaccess.local.1",
-      "hostSourceCommit": "6013e6af6af08d19de7021ace70029c71ff9e7da",
-      "releaseBlockedReason": "Requires an unreleased upstream host-routed file API. Published beta.1 is insufficient.",
+      "hostPackageVersion": "2.2.0-beta.3",
+      "hostSourceCommit": "9eefa639a904059c0a03f39e7908332f468828af",
       "artifactFormat": "nupkg"
     },
     {

@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 [assembly: LANCommanderPlugin(typeof(LANCommander.Community.Server.Quake3.Quake3Plugin),
     Id = LANCommander.Community.Server.Quake3.Quake3Plugin.PluginId,
-    MinHostVersion = "2.2.0-beta.1-fileaccess.local.1", Hosts = PluginHost.Server)]
+    MinHostVersion = "2.2.0-beta.3", Hosts = PluginHost.Server)]
 
 namespace LANCommander.Community.Server.Quake3;
 

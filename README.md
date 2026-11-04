@@ -10,8 +10,8 @@ projects and releases.
   LANCommander catalog management.
 - [Server.RecompCatalog](plugins/Server.RecompCatalog/README.md) — browse a
   compatible catalog and prepare game imports.
-- [Server.Quake3](plugins/Server.Quake3/README.md) — native Quake 3 administration
-  (development preview; requires an unreleased host file API).
+- [Server.Quake3](plugins/Server.Quake3/README.md) — native Quake 3 server
+  administration (requires LANCommander Server 2.2.0-beta.3 or later).
 - [Launcher.MQTT](plugins/Launcher.MQTT/README.md) — MQTT command and state
   integration for the LANCommander GUI Launcher, including Home Assistant
   discovery.

@@ -9,7 +9,7 @@
 - Add durable per-server plugin state and cached PK3/loose-map discovery with
   explicit refresh and stale/unavailable results.
 - Add independent registry, core/host tests and package validation.
-- Development-only: requires unreleased host file-access contracts.
-- Validate against actual upstream host packages and emitted package loading;
+- Use published LANCommander 2.2.0-beta.3 host-routed file contracts.
+- Validate against actual published host packages and emitted package loading;
   journal startup write intent and live acknowledgement separately so partial
   external writes remain visible after plugin restart.

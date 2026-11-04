@@ -34,7 +34,8 @@ Assert-Equal @('0.2.1', '0.4.2', '0.2.0') @($batch | ForEach-Object version) 'In
 $all = @(Resolve-PluginSelection -Plugins @('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT', 'Server.Quake3'))
 Assert-Equal @('0.2.1', '0.4.2', '0.2.0', '0.1.0-alpha.1') @($all | ForEach-Object version) 'Four-component independent versions'
 $quakeMetadata = @(Get-PluginRegistry | Where-Object key -CEQ 'Server.Quake3')[0]
-if (-not $quakeMetadata.releaseBlockedReason) { throw 'Unreleased Quake host contracts must block publication.' }
+Assert-Equal '2.2.0-beta.3' $quakeMetadata.minimumHostVersion 'Published Quake host API baseline'
+Assert-Equal '2.2.0-beta.3' $quakeMetadata.hostPackageVersion 'Quake package host baseline'
 
 foreach ($version in @('1.2.3', '0.3.0-beta.1', '1.2.3-rc.2+build.7')) {
     if (-not (Test-PluginSemVer $version)) { throw "Valid SemVer was rejected: $version" }

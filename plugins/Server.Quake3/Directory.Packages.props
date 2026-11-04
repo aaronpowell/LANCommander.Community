@@ -1,8 +1,7 @@
 <Project>
   <Import Project="$(MSBuildThisFileDirectory)..\..\Directory.Packages.props" />
   <PropertyGroup>
-    <!-- This is an explicitly unreleased upstream contract, not the published beta.1 package. -->
-    <Quake3HostPackageVersion>2.2.0-beta.1-fileaccess.local.1</Quake3HostPackageVersion>
+    <Quake3HostPackageVersion>2.2.0-beta.3</Quake3HostPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Update="LANCommander.SDK" Version="$(Quake3HostPackageVersion)" />

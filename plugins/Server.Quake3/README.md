@@ -8,22 +8,14 @@ the container.
 
 ## Compatibility and development status
 
-**Not installable on the published LANCommander 2.2.0-beta.1 host.**
-The plugin needs the upstream public `IServerProvider` host-routed
-`ListFilesAsync`, `OpenFileAsync`, `WriteFileAsync` contract. Development
-validation uses explicitly unreleased SDK/Plugins/UI packages
-`2.2.0-beta.1-fileaccess.local.1`; do not relabel these contracts beta.1.
-The Quake-specific central package file leaves other components' pins intact.
-Releasing is blocked in `eng/plugins.json` until a compatible published host
-is selected and the integration is validated.
-
-Full Quake validation remains enabled in the CI matrix for external review.
-On a clean GitHub runner, restore fails with `NU1102` for the unpublished
-`2.2.0-beta.1-fileaccess.local.1` SDK/Plugins/UI version, before compilation.
-Substituting published beta.1 would instead fail compilation because its
-provider lacks the file methods/types. The prerequisite is
-[LANCommander/LANCommander#480](https://github.com/LANCommander/LANCommander/pull/480);
-its merge alone does not publish compatible NuGet packages.
+Requires LANCommander Server **2.2.0-beta.3 or later**. The Quake-specific
+central package file pins only this plugin's SDK, Server.Plugins and Server.UI
+contracts to published `2.2.0-beta.3`; other plugins' host pins are unchanged.
+The host provides `IServerProvider.ListFilesAsync`, `OpenFileAsync`,
+`WriteFileAsync` and `ServerFileInfo`. These APIs were added in
+[LANCommander/LANCommander#480](https://github.com/LANCommander/LANCommander/pull/480)
+and are included in beta.3. A running host must itself be beta.3 or later;
+restoring compile-time NuGet packages does not upgrade the server.
 
 The plugin package and assembly are both
 `LANCommander.Community.Server.Quake3`. Its private helper assembly is
@@ -124,9 +116,9 @@ Deleting/replacing state is an operator action, not an automatic recovery.
 
 ## Build and verification
 
-The development contract packages were built from upstream host commit
-`6013e6af6af08d19de7021ace70029c71ff9e7da`. Runtime must use the matching host
-source, not merely restore its packages into an existing published beta.1 host.
+The pinned public host packages were built from upstream tag
+`v2.2.0-beta.3` (source commit
+`9eefa639a904059c0a03f39e7908332f468828af`).
 
 Requires .NET 10 SDK and PowerShell 7. Core tests do not need LC, Docker or
 game assets:
@@ -137,11 +129,10 @@ pwsh .\eng\Test-ReleaseSelection.ps1
 pwsh .\eng\Test-Repository.ps1
 ```
 
-For full development verification, restore the plugin and host-test project
-against the actual upstream local feed, then run validation:
+For full validation, use the public NuGet feed, then run:
 
 ```powershell
-dotnet restore .\plugins\Server.Quake3\LANCommander.Community.Server.Quake3.Host.Tests\LANCommander.Community.Server.Quake3.Host.Tests.csproj --source <upstream-local-feed> --source https://api.nuget.org/v3/index.json
+dotnet restore .\plugins\Server.Quake3\LANCommander.Community.Server.Quake3.Host.Tests\LANCommander.Community.Server.Quake3.Host.Tests.csproj --source https://api.nuget.org/v3/index.json --force --no-cache
 pwsh .\eng\Validate-Plugin.ps1 -Plugin Server.Quake3 -OutputDirectory <new-output-directory>
 ```
 

@@ -21,7 +21,7 @@ jobs:
         run: |
           ./eng/Test-ReleaseSelection.ps1
           ./eng/Test-Repository.ps1
-      - name: Validate Quake core without unpublished host contracts
+      - name: Validate Quake core safety tests
         run: dotnet test plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Tests/LANCommander.Community.Server.Quake3.Tests.csproj -c Release --nologo
 
   validate:
