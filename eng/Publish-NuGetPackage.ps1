@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT')]
+    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Server.Quake3', 'Launcher.MQTT')]
     [string] $Plugin,
     [Parameter(Mandatory)][string] $Tag,
     [Parameter(Mandatory)][string] $ArtifactDirectory,
@@ -60,7 +60,7 @@ function Test-NuGetPublishedPackage {
 
 $selection = @(Resolve-PluginSelection -Tag $Tag -Plugins @($Plugin))[0]
 $component = @(Get-PluginRegistry | Where-Object key -CEQ $Plugin)[0]
-if ($component.artifactFormat -cne 'nupkg') {
+if ($component.artifactFormat -cne 'nupkg' -or $component.nugetOrgEligible -ne $true) {
     throw "$Plugin produces '$($component.artifactFormat)' artifacts and is not eligible for NuGet publication."
 }
 
@@ -114,7 +114,7 @@ if ($PlanOnly) {
 }
 
 if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
-    throw 'NuGet publication was explicitly requested, but the nuget.org environment secret NUGET_API_KEY is missing.'
+    throw 'NuGet publication was explicitly requested, but NUGET_API_KEY is missing.'
 }
 if ($env:GITHUB_ACTIONS -cne 'true') {
     throw 'NuGet publication must run through the protected GitHub Actions workflow.'

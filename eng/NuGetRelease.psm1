@@ -71,31 +71,4 @@ function Compare-NuGetPackagePayload {
     }
 }
 
-function Assert-NuGetEnvironmentProtection {
-    param(
-        [Parameter(Mandatory)][object] $Environment,
-        [Parameter(Mandatory)][object] $BranchPolicies
-    )
-
-    if ($Environment.name -cne 'nuget.org') {
-        throw 'The existing nuget.org environment could not be confirmed.'
-    }
-
-    $reviewRules = @($Environment.protection_rules | Where-Object type -CEQ 'required_reviewers')
-    if ($reviewRules.Count -ne 1 -or @($reviewRules[0].reviewers).Count -lt 1 -or
-        $reviewRules[0].prevent_self_review -ne $true) {
-        throw 'The nuget.org environment must require at least one reviewer and prevent self-review.'
-    }
-
-    if ($Environment.deployment_branch_policy.custom_branch_policies -ne $true -or
-        $Environment.deployment_branch_policy.protected_branches -ne $false) {
-        throw 'The nuget.org environment must use an explicit deployment branch policy.'
-    }
-
-    $policies = @($BranchPolicies.branch_policies)
-    if ($policies.Count -ne 1 -or $policies[0].type -cne 'branch' -or $policies[0].name -cne 'main') {
-        throw 'The nuget.org environment must allow deployments from main only.'
-    }
-}
-
-Export-ModuleMember -Function Assert-NuGetEnvironmentProtection, Assert-NuGetRepositorySignature, Compare-NuGetPackagePayload
+Export-ModuleMember -Function Assert-NuGetRepositorySignature, Compare-NuGetPackagePayload

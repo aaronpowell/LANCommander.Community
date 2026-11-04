@@ -44,12 +44,13 @@ foreach ($plugin in $plugins) {
         throw "$($plugin.key) NuGet artifacts must declare their host package types."
     }
     if ($plugin.githubPackagesEligible -isnot [bool] -or
-        ($plugin.githubPackagesEligible -and $plugin.artifactFormat -cne 'nupkg')) {
-        throw "$($plugin.key) GitHub Packages eligibility must be an explicit bool and only nupkg artifacts may be eligible."
+        $plugin.nugetOrgEligible -isnot [bool] -or
+        (($plugin.githubPackagesEligible -or $plugin.nugetOrgEligible) -and $plugin.artifactFormat -cne 'nupkg')) {
+        throw "$($plugin.key) package-feed eligibility must be explicit bools and only nupkg artifacts may be eligible."
     }
-    if ($plugin.githubPackagesEligible -and
+    if (($plugin.githubPackagesEligible -or $plugin.nugetOrgEligible) -and
         [string]$pluginProjectXml.Project.PropertyGroup.RepositoryUrl -cne 'https://github.com/aaronpowell/LANCommander.Community') {
-        throw "$($plugin.key) must link GitHub Packages to the canonical LANCommander.Community repository."
+        throw "$($plugin.key) must link package feeds to the canonical LANCommander.Community repository."
     }
 }
 

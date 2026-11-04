@@ -84,9 +84,11 @@ checksum. Host assemblies are compile-time references, not bundled dependencies.
 dotnet pack .\plugins\Server.RecompCatalog\LANCommander.Community.Server.RecompCatalog.Plugin\LANCommander.Community.Server.RecompCatalog.Plugin.csproj -c Release -o artifacts
 ```
 
-Pull request CI validates all components. This package is distributed through
-the repository's GitHub Release; the optional, manually gated NuGet.org
-workflow uses the normalized package ID.
+Pull request CI validates all components. A component tag publishes this
+package to the repository's GitHub Release and GitHub Packages NuGet feed.
+NuGet.org publication is also automatic when the repository `NUGET_API_KEY`
+secret is configured. See the repository's [plugin release procedure](../../RELEASES.md)
+for eligibility, permissions, and retry behavior.
 
 ## Build
 

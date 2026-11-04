@@ -6,15 +6,10 @@ projects and releases.
 
 ## Plugins
 
-- [Server.Mcp](plugins/Server.Mcp/README.md) — Model Context Protocol access to
-  LANCommander catalog management.
-- [Server.RecompCatalog](plugins/Server.RecompCatalog/README.md) — browse a
-  compatible catalog and prepare game imports.
-- [Server.Quake3](plugins/Server.Quake3/README.md) — native Quake 3 server
-  administration (requires LANCommander Server 2.2.0-beta.3 or later).
-- [Launcher.MQTT](plugins/Launcher.MQTT/README.md) — MQTT command and state
-  integration for the LANCommander GUI Launcher, including Home Assistant
-  discovery.
+- [Server.Mcp](plugins/Server.Mcp/README.md)
+- [Server.RecompCatalog](plugins/Server.RecompCatalog/README.md)
+- [Server.Quake3](plugins/Server.Quake3/README.md)
+- [Launcher.MQTT](plugins/Launcher.MQTT/README.md)
 
 Each child README is the canonical guide for its plugin's requirements,
 compatibility, setup, installation, behavior, and limitations.
@@ -22,10 +17,9 @@ compatibility, setup, installation, behavior, and limitations.
 ## Build and validate
 
 Install the .NET 10 SDK and PowerShell 7. Additional prerequisites for an
-individual plugin are documented in its README. From the repository root, build
-all projects with. The Launcher.MQTT project also requires its pinned host
-source; see its [build instructions](plugins/Launcher.MQTT/README.md#configure-and-build-the-source-pinned-plugin)
-before running a full solution build.
+individual plugin, including any required source materialization, are
+documented in its README. Consult those instructions before building the full
+solution.
 
 ```powershell
 dotnet build .\LANCommander.Community.slnx -c Release
@@ -36,6 +30,7 @@ Run the repository checks:
 ```powershell
 pwsh .\eng\Test-ReleaseSelection.ps1
 pwsh .\eng\Test-Repository.ps1
+pwsh .\eng\Test-ReleaseDestinations.ps1
 pwsh .\eng\Test-NuGetPublication.ps1
 pwsh .\eng\Test-GitHubPackages.ps1
 ```

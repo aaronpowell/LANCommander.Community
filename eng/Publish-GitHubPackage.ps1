@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT')]
+    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Server.Quake3', 'Launcher.MQTT')]
     [string] $Plugin,
     [Parameter(Mandatory)][string] $Tag,
     [Parameter(Mandatory)][string] $ArtifactDirectory,
@@ -111,9 +111,9 @@ if ([string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN)) {
     throw 'GitHub Packages publication was explicitly requested, but GITHUB_TOKEN is unavailable.'
 }
 if ($env:GITHUB_ACTIONS -cne 'true' -or
-    $env:GITHUB_REF -cne 'refs/heads/main' -or
+    $env:GITHUB_REF -cne "refs/tags/$Tag" -or
     $env:GITHUB_REPOSITORY -cne $Repository) {
-    throw 'GitHub Packages publication must run from the protected workflow dispatched on canonical main.'
+    throw 'GitHub Packages publication must run from the component release workflow for the exact tag.'
 }
 
 $tagCommit = (& git -C $repositoryRoot rev-parse "$Tag^{commit}").Trim()

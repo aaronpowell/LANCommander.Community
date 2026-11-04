@@ -4,6 +4,7 @@ Import-Module (Join-Path $PSScriptRoot 'PluginRelease.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'GitHubPackages.psm1') -Force
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) "lancommander-github-packages-$([Guid]::NewGuid().ToString('N'))"
 New-Item -ItemType Directory -Path $testRoot | Out-Null
+$originalGitHubToken = [Environment]::GetEnvironmentVariable('GITHUB_TOKEN', 'Process')
 
 function New-TestPackage {
     param([Parameter(Mandatory)][string] $Path, [string] $Payload = 'package payload')
@@ -104,29 +105,24 @@ function Assert-Fails {
 }
 
 try {
-    $workflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/publish-github-packages.yml') -Raw
-    if ($workflow -notmatch '(?m)^  workflow_dispatch:' -or
-        $workflow -notmatch 'default:\s+false' -or
-        $workflow -notmatch 'publish:\s*\r?\n\s+description: Confirm publication to GitHub Packages' -or
-        $workflow -notmatch 'packages:\s+write' -or
-        $workflow -notmatch 'if:\s+inputs\.publish == true' -or
-        $workflow -notmatch "WORKFLOW_REF -cne 'refs/heads/main'" -or
-        $workflow -notmatch 'manifest\.sourceCommit -cne \$tagCommit' -or
-        $workflow -notmatch 'github\.repository_owner' -or
-        $workflow -match '(?m)^  push:') {
-        throw 'GitHub Packages publishing must remain manual, confirmation-gated, and owner-derived.'
+    $workflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release-plugin.yml') -Raw
+    $githubPackagesJob = [regex]::Match($workflow, '(?ms)^  publish-github-packages:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
+    if ($workflow -notmatch 'workflow_call:' -or
+        $githubPackagesJob -notmatch "if:\s+needs\.build\.outputs\.github_packages_eligible == 'true'" -or
+        $githubPackagesJob -notmatch 'packages:\s+write' -or
+        $githubPackagesJob -notmatch 'GITHUB_TOKEN:\s+\$\{\{\s*github\.token\s*\}\}' -or
+        $githubPackagesJob -notmatch 'Publish-GitHubPackage\.ps1.*-Publish' -or
+        $githubPackagesJob -notmatch 'actions/download-artifact@' -or
+        $githubPackagesJob -match 'NUGET_API_KEY|dotnet pack|Validate-Plugin\.ps1') {
+        throw 'GitHub Packages must publish the selected eligible component automatically from the shared validated artifact.'
     }
-    $publishJob = [regex]::Match($workflow, '(?ms)^  publish:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
-    if ($publishJob -notmatch 'permissions:\s*\r?\n\s+contents:\s+read\s*\r?\n\s+packages:\s+write') {
-        throw 'Only the GitHub Packages publish job may receive packages:write, with contents:read.'
+    if (Test-Path -LiteralPath (Join-Path $repositoryRoot '.github/workflows/publish-github-packages.yml')) {
+        throw 'The separate manual GitHub Packages workflow must not remain.'
     }
     $releaseWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release.yml') -Raw
-    if ($releaseWorkflow -match 'packages:\s+write|Publish-GitHubPackage') {
-        throw 'Tag-driven GitHub Releases must not publish to GitHub Packages.'
-    }
-    $nugetWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/publish-nuget.yml') -Raw
-    if ($nugetWorkflow -notmatch 'NUGET_API_KEY' -or $nugetWorkflow -match 'GITHUB_TOKEN:\s+\$\{\{\s*github\.token\s*\}\}') {
-        throw 'GitHub Packages support must not alter the separate NuGet.org publishing path.'
+    if ($releaseWorkflow -notmatch 'packages:\s+write' -or
+        $releaseWorkflow -notmatch 'nuget_api_key:\s+\$\{\{\s*secrets\.NUGET_API_KEY\s*\}\}') {
+        throw 'The tag-triggered reusable release must provide minimum caller permissions and optional NuGet.org secret forwarding.'
     }
 
     $artifactDirectory = Join-Path $testRoot 'artifact'
@@ -141,7 +137,7 @@ try {
         component = 'Server.Mcp'
         version = '0.2.1'
         host = 'Server'
-        minimumHostVersion = '2.2.0-alpha.4'
+        minimumHostVersion = '2.2.0-beta.3'
         maximumHostVersion = $null
         artifactFormat = 'nupkg'
         asset = $packageName
@@ -162,6 +158,10 @@ try {
         $plan.publishRequested -ne $true) {
         throw 'The GitHub Packages plan did not preserve component, identity, version, owner, and feed.'
     }
+    Remove-Item Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
+    Assert-Fails {
+        & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish
+    } 'GITHUB_TOKEN is unavailable' 'Missing GitHub Packages credential'
     Assert-Fails {
         & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.2 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly
     } 'does not match' 'Release tag selection'
@@ -210,5 +210,11 @@ try {
     Write-Output 'GitHub Packages publication tests passed. No feed request or package publication was performed.'
 }
 finally {
+    if ($null -eq $originalGitHubToken) {
+        Remove-Item Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
+    }
+    else {
+        $env:GITHUB_TOKEN = $originalGitHubToken
+    }
     Remove-Item -LiteralPath $testRoot -Recurse -Force
 }

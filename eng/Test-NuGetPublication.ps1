@@ -113,7 +113,7 @@ function New-TestArtifact {
         component = 'Server.Mcp'
         version = $PackageVersion
         host = 'Server'
-        minimumHostVersion = '2.2.0-alpha.4'
+        minimumHostVersion = '2.2.0-beta.3'
         maximumHostVersion = $null
         artifactFormat = 'nupkg'
         asset = $assetName
@@ -138,20 +138,19 @@ function Assert-Fails {
 
 try {
     Remove-Item Env:NUGET_API_KEY -ErrorAction SilentlyContinue
-    $nugetWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/publish-nuget.yml') -Raw
-    if ($nugetWorkflow -notmatch '(?m)^  workflow_dispatch:' -or
-        $nugetWorkflow -match '(?m)^  push:' -or
-        $nugetWorkflow -notmatch "WORKFLOW_REF -cne 'refs/heads/main'" -or
-        $nugetWorkflow -notmatch 'name:\s+nuget\.org' -or
-        $nugetWorkflow -notmatch 'Assert-NuGetEnvironmentProtection' -or
-        $nugetWorkflow -notmatch 'environment_ready' -or
-        $nugetWorkflow -notmatch 'NUGET_API_KEY:\s+\$\{\{\s*secrets\.NUGET_API_KEY\s*\}\}' -or
-        $nugetWorkflow -notmatch 'Publish-NuGetPackage\.ps1.*-Publish') {
-        throw 'NuGet publication must stay manual, environment-preflighted, gated, and explicitly opted in.'
+    $releasePluginWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release-plugin.yml') -Raw
+    $nugetJob = [regex]::Match($releasePluginWorkflow, '(?ms)^  publish-nuget-org:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
+    $skipJob = [regex]::Match($releasePluginWorkflow, '(?ms)^  nuget-org-skipped:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
+    if ($releasePluginWorkflow -notmatch "if:\s+needs\.build\.outputs\.nuget_org_eligible == 'true' && needs\.build\.outputs\.nuget_api_key_available == 'true'" -or
+        $nugetJob -notmatch 'NUGET_API_KEY:\s+\$\{\{\s*secrets\.nuget_api_key\s*\}\}' -or
+        $nugetJob -notmatch 'Publish-NuGetPackage\.ps1.*-Publish' -or
+        $nugetJob -notmatch 'actions/download-artifact@' -or
+        $nugetJob -match 'environment:|packages:\s+write|dotnet pack|Validate-Plugin\.ps1' -or
+        $skipJob -notmatch 'NUGET_API_KEY repository secret is not configured') {
+        throw 'NuGet.org must be automatically selected only for eligible packages with a configured API key, or report its intentional skip.'
     }
-    $tagWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release.yml') -Raw
-    if ($tagWorkflow -match 'NUGET_API_KEY|Publish-NuGetPackage') {
-        throw 'The tag-triggered release workflow must remain GitHub-only.'
+    if (Test-Path -LiteralPath (Join-Path $repositoryRoot '.github/workflows/publish-nuget.yml')) {
+        throw 'The separate manual NuGet.org workflow must not remain.'
     }
     $publisherSource = Get-Content -LiteralPath $publisher -Raw
     if ($publisherSource -match '--skip-duplicate') {
@@ -259,31 +258,6 @@ Service index: https://api.nuget.org/v3/index.json
     Assert-Fails {
         Assert-NuGetRepositorySignature -PackagePath $unsignedPackagePath -VerificationExitCode 0 -VerificationOutput $validVerificationOutput
     } 'exactly one root .signature.p7s' 'Missing repository signature entry'
-
-    $environment = [pscustomobject]@{
-        name = 'nuget.org'
-        protection_rules = @([pscustomobject]@{
-            type = 'required_reviewers'
-            reviewers = @([pscustomobject]@{ type = 'User'; reviewer = [pscustomobject]@{ login = 'release-reviewer' } })
-            prevent_self_review = $true
-        })
-        deployment_branch_policy = [pscustomobject]@{ custom_branch_policies = $true; protected_branches = $false }
-    }
-    $mainPolicy = [pscustomobject]@{ branch_policies = @([pscustomobject]@{ type = 'branch'; name = 'main' }) }
-    Assert-NuGetEnvironmentProtection -Environment $environment -BranchPolicies $mainPolicy
-    Assert-Fails {
-        $unprotected = $environment | Select-Object *
-        $unprotected.name = 'missing'
-        Assert-NuGetEnvironmentProtection -Environment $unprotected -BranchPolicies $mainPolicy
-    } 'existing nuget.org environment' 'Missing NuGet environment'
-    Assert-Fails {
-        $noReviewer = [pscustomobject]@{ name = 'nuget.org'; protection_rules = @(); deployment_branch_policy = $environment.deployment_branch_policy }
-        Assert-NuGetEnvironmentProtection -Environment $noReviewer -BranchPolicies $mainPolicy
-    } 'must require at least one reviewer' 'Unprotected NuGet environment'
-    Assert-Fails {
-        $otherPolicy = [pscustomobject]@{ branch_policies = @([pscustomobject]@{ type = 'branch'; name = '*' }) }
-        Assert-NuGetEnvironmentProtection -Environment $environment -BranchPolicies $otherPolicy
-    } 'allow deployments from main only' 'Broad NuGet branch policy'
 
     Write-Output 'NuGet publication tests passed. Repository-signature fixtures are synthetic and do not replace dotnet nuget verify.'
 }
