@@ -182,7 +182,7 @@ try {
     $env:NUGET_API_KEY = 'test-only-not-a-real-key'
     Assert-Fails {
         & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $validDirectory -Publish
-    } 'protected GitHub Actions workflow' 'Manual publisher guard'
+    } 'protected GitHub Actions workflow' 'Tag workflow guard'
     Remove-Item Env:NUGET_API_KEY -ErrorAction SilentlyContinue
 
     $wrongIdDirectory = Join-Path $testRoot 'wrong-id'
