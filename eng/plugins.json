@@ -32,7 +32,7 @@
       "packageId": "LANCommander.Mcp",
       "assemblyName": "LANCommander.Mcp",
       "host": "Server",
-      "minimumHostVersion": "2.2.0-alpha.4",
+      "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": null,
       "artifactFormat": "nupkg"
     },
@@ -48,7 +48,7 @@
       "packageId": "LANCommander.RecompCatalog.Plugin",
       "assemblyName": "LANCommander.RecompCatalog.Plugin",
       "host": "Server",
-      "minimumHostVersion": "2.2.0-alpha.3",
+      "minimumHostVersion": "2.2.0-beta.3",
       "maximumHostVersion": null,
       "artifactFormat": "nupkg"
     },
@@ -65,8 +65,8 @@
       "packageId": "LanCommander.HomeAssistant.Plugin",
       "assemblyName": "LanCommander.HomeAssistant.Plugin",
       "host": "Launcher",
-      "minimumHostVersion": "2.2.0-alpha.4",
-      "maximumHostVersion": "2.2.0-alpha.4",
+      "minimumHostVersion": "2.2.0-beta.3",
+      "maximumHostVersion": "2.2.0-beta.3",
       "artifactFormat": "zip"
     }
   ]

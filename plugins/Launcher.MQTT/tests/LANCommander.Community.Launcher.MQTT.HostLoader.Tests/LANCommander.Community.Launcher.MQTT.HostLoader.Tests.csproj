@@ -25,6 +25,6 @@
     <ProjectReference Include="..\..\src\LANCommander.Community.Launcher.MQTT.Plugin\LANCommander.Community.Launcher.MQTT.Plugin.csproj" />
   </ItemGroup>
   <Target Name="RequireLANCommanderSourceRoot" BeforeTargets="PrepareForBuild" Condition="'$(LANCommanderSourceRoot)' == ''">
-    <Error Text="Set LANCommanderSourceRoot (or LANCOMMANDER_SOURCE_ROOT) to a LANCommander v2.2.0-alpha.4 source checkout to run loader identity tests." />
+    <Error Text="Set LANCommanderSourceRoot (or LANCOMMANDER_SOURCE_ROOT) to a LANCommander v2.2.0-beta.3 source checkout to run loader identity tests." />
   </Target>
 </Project>

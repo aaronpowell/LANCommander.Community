@@ -32,7 +32,7 @@ if ($Plugin -eq 'Launcher.MQTT') {
         [IO.Path]::GetFullPath($env:LANCOMMANDER_SOURCE_ROOT)
     }
     else {
-        Join-Path $repositoryRoot '.cache/lancommander-alpha4'
+        Join-Path $repositoryRoot '.cache/lancommander-beta3'
     }
     & (Join-Path $PSScriptRoot 'Prepare-LANCommanderSource.ps1') -Destination $hostSource | Out-Null
     $sourcePin = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'lancommander-source.json') -Raw | ConvertFrom-Json
@@ -87,7 +87,7 @@ $manifest = [ordered]@{
     host = $component.host
     minimumHostVersion = $component.minimumHostVersion
     maximumHostVersion = $component.maximumHostVersion
-    lanCommanderPackageVersion = if ($component.hostPackageVersion) { $component.hostPackageVersion } else { '2.2.0-alpha.4' }
+    lanCommanderPackageVersion = if ($component.hostPackageVersion) { $component.hostPackageVersion } else { '2.2.0-beta.3' }
     lanCommanderSourceCommit = if ($Plugin -eq 'Launcher.MQTT') { $sourcePin.commit } elseif ($component.hostSourceCommit) { $component.hostSourceCommit } else { $null }
     artifactFormat = $component.artifactFormat
     asset = Split-Path -Leaf $asset

@@ -55,8 +55,8 @@ $inventory = Get-ChildItem $plugin -File -Recurse | ForEach-Object {
 }
 $manifest = [ordered]@{
     pluginVersion = $version
-    hostTag = 'v2.2.0-alpha.4'
-    hostCommit = '4c8c73e47da6d4198c6153cc93ca7bb480d30abe'
+    hostTag = 'v2.2.0-beta.3'
+    hostCommit = '9eefa639a904059c0a03f39e7908332f468828af'
     platform = 'Windows; .NET 10; GUI Launcher'
     builtAtUtc = [DateTimeOffset]::UtcNow.ToString('O')
     limitations = 'Prior HA-to-LC launch PoC confirmed by user. New native settings UI, HA select entities and real queue installation require user-machine testing; see TEST-GUIDE.md.'

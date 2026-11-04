@@ -17,7 +17,7 @@ $packageOutput = if ($OutputDirectory) { $OutputDirectory } else {
 }
 
 if ($Plugin -eq 'Launcher.MQTT') {
-    $hostSource = Join-Path $repositoryRoot '.cache/lancommander-alpha4'
+    $hostSource = Join-Path $repositoryRoot '.cache/lancommander-beta3'
     & (Join-Path $PSScriptRoot 'Prepare-LANCommanderSource.ps1') -Destination $hostSource | Out-Null
     $env:LANCOMMANDER_SOURCE_ROOT = $hostSource
     $env:LANCOMMANDER_HOMEASSISTANT_PLUGIN_PATH = Join-Path $repositoryRoot 'plugins/Launcher.MQTT/src/LANCommander.Community.Launcher.MQTT.Plugin/bin/Release/net10.0/plugin-package/LanCommander.HomeAssistant.Plugin.dll'

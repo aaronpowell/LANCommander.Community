@@ -10,7 +10,7 @@ the container.
 
 Requires LANCommander Server **2.2.0-beta.3 or later**. The Quake-specific
 central package file pins only this plugin's SDK, Server.Plugins and Server.UI
-contracts to published `2.2.0-beta.3`; other plugins' host pins are unchanged.
+contracts to published `2.2.0-beta.3`, matching the shared host baseline.
 The host provides `IServerProvider.ListFilesAsync`, `OpenFileAsync`,
 `WriteFileAsync` and `ServerFileInfo`. These APIs were added in
 [LANCommander/LANCommander#480](https://github.com/LANCommander/LANCommander/pull/480)
