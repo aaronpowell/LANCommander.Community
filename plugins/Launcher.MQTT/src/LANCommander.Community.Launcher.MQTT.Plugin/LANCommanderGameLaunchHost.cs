@@ -190,7 +190,7 @@ public sealed class LANCommanderGameLaunchHost(
         var games = plan.Items.Where(item => item.Type is InstallPlanItemType.Game or InstallPlanItemType.Addon).ToArray();
         if (!games.Any(item => item.EntityId == requestedGameId))
             throw new RemoteOperationException("install_plan_missing_requested_game");
-        // Add regenerates its plan. Reject installed dependencies too: alpha.4's
+        // Add regenerates its plan. Reject installed dependencies too: the host's
         // installed-game branch can modify addons/tools rather than just enqueue.
         if (games.Any(item => installedGameIds.Contains(item.EntityId)
                 || !string.IsNullOrEmpty(item.InstallDirectory) && ManifestHelper.Exists(item.InstallDirectory, item.EntityId)))

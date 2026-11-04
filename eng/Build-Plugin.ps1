@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT')]
+    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT', 'Server.Quake3')]
     [string] $Plugin,
     [switch] $Package,
     [string] $OutputDirectory
@@ -32,7 +32,7 @@ if ($Plugin -eq 'Launcher.MQTT') {
         [IO.Path]::GetFullPath($env:LANCOMMANDER_SOURCE_ROOT)
     }
     else {
-        Join-Path $repositoryRoot '.cache/lancommander-alpha4'
+        Join-Path $repositoryRoot '.cache/lancommander-beta3'
     }
     & (Join-Path $PSScriptRoot 'Prepare-LANCommanderSource.ps1') -Destination $hostSource | Out-Null
     $sourcePin = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'lancommander-source.json') -Raw | ConvertFrom-Json
@@ -71,6 +71,9 @@ else {
     if ($Plugin -eq 'Server.Mcp') {
         & (Join-Path $repositoryRoot 'plugins/Server.Mcp/eng/Test-Package.ps1') -PackagePath $asset -ExpectedVersion $version
     }
+    elseif ($Plugin -eq 'Server.Quake3') {
+        & (Join-Path $repositoryRoot 'plugins/Server.Quake3/eng/Test-Package.ps1') -PackagePath $asset -ExpectedVersion $version
+    }
     else {
         & (Join-Path $PSScriptRoot 'Test-Recomp-Package.ps1') -PackagePath $asset -ExpectedVersion $version
     }
@@ -85,12 +88,13 @@ $manifest = [ordered]@{
     host = $component.host
     minimumHostVersion = $component.minimumHostVersion
     maximumHostVersion = $component.maximumHostVersion
-    lanCommanderPackageVersion = '2.2.0-alpha.4'
-    lanCommanderSourceCommit = if ($Plugin -eq 'Launcher.MQTT') { $sourcePin.commit } else { $null }
+    lanCommanderPackageVersion = if ($component.hostPackageVersion) { $component.hostPackageVersion } else { '2.2.0-beta.3' }
+    lanCommanderSourceCommit = if ($Plugin -eq 'Launcher.MQTT') { $sourcePin.commit } elseif ($component.hostSourceCommit) { $component.hostSourceCommit } else { $null }
     artifactFormat = $component.artifactFormat
     asset = Split-Path -Leaf $asset
     sha256 = $hash
     sourceCommit = (& git -C $repositoryRoot rev-parse HEAD).Trim()
+    sourceDirty = @(& git -C $repositoryRoot status --porcelain).Count -gt 0
 }
 $manifest | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $artifactDirectory 'release-manifest.json') -Encoding utf8
 

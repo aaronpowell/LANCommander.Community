@@ -1,7 +1,7 @@
 # Launcher test package 0.2.0
 
-Actual Windows GUI Launcher plugin targeting **LANCommander v2.2.0-alpha.4**,
-source commit `4c8c73e47da6d4198c6153cc93ca7bb480d30abe`, .NET 10.
+Actual Windows GUI Launcher plugin targeting **LANCommander v2.2.0-beta.3**,
+source commit `9eefa639a904059c0a03f39e7908332f468828af`, .NET 10.
 The earlier PoC's real HA-to-LC launch was confirmed by the user. This iteration
 adds native configuration, scalable selection and the normal LC install queue.
 Its new GUI and real install workflow still require your smoke test.
@@ -126,7 +126,7 @@ unsupported `uuid()`. Each render creates a fresh UUIDv4-shaped ID and exactly
    modification, uninstall or implicit launch is offered.
    A plan containing an already-installed game dependency is also rejected with
    `install_plan_would_modify_installed_game`; perform that addon/dependency case
-   locally, because alpha.4's installed-game branch can modify addons/tools.
+   locally, because the host's installed-game branch can modify addons/tools.
 
 Avoid overlapping manual and remote actions in this iteration. Local active
 queue/running-game guards reject remote operations, but the upstream host has no
@@ -166,7 +166,7 @@ administration if removing the plugin entirely.
 
 ## Verification boundary
 
-Automated checks build from isolated pinned alpha.4 source, exercise the actual
+Automated checks build from isolated pinned beta.3 source, exercise the actual
 plugin loader/default host type identity/headless initialization and inspect the
 four-DLL inventory. Core tests cover selection, dynamic eligibility, deduplication,
 separate install/run, failure outcomes and destination guards. Real local MQTT 5

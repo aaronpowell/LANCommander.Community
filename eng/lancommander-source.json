@@ -1,7 +1,7 @@
 {
   "repository": "https://github.com/LANCommander/LANCommander.git",
-  "tag": "v2.2.0-alpha.4",
-  "commit": "4c8c73e47da6d4198c6153cc93ca7bb480d30abe",
+  "tag": "v2.2.0-beta.3",
+  "commit": "9eefa639a904059c0a03f39e7908332f468828af",
   "projects": [
     "LANCommander.SDK",
     "LANCommander.Launcher.Plugins",

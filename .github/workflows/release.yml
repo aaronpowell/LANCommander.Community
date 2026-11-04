@@ -6,6 +6,7 @@ on:
       - server-mcp-v*
       - server-recompcatalog-v*
       - launcher-mqtt-v*
+      - server-quake3-v*
 
 permissions:
   contents: read
@@ -52,6 +53,16 @@ jobs:
     uses: ./.github/workflows/release-plugin.yml
     with:
       plugin: Server.Mcp
+      tag: ${{ needs.plan.outputs.tag }}
+
+  server-quake3:
+    needs: plan
+    if: needs.plan.outputs.plugin == 'Server.Quake3'
+    permissions:
+      contents: write
+    uses: ./.github/workflows/release-plugin.yml
+    with:
+      plugin: Server.Quake3
       tag: ${{ needs.plan.outputs.tag }}
 
   server-recompcatalog:

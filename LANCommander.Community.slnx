@@ -1,4 +1,8 @@
 <Solution>
+  <Project Path="plugins/Server.Quake3/LANCommander.Community.Server.Quake3/LANCommander.Community.Server.Quake3.csproj" />
+  <Project Path="plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Core/LANCommander.Community.Server.Quake3.Core.csproj" />
+  <Project Path="plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Tests/LANCommander.Community.Server.Quake3.Tests.csproj" />
+  <Project Path="plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Host.Tests/LANCommander.Community.Server.Quake3.Host.Tests.csproj" />
   <Project Path="plugins/Server.Mcp/src/LANCommander.Community.Server.Mcp/LANCommander.Community.Server.Mcp.csproj" />
   <Project Path="plugins/Server.Mcp/tests/LANCommander.Community.Server.Mcp.Tests/LANCommander.Community.Server.Mcp.Tests.csproj" />
   <Project Path="plugins/Server.RecompCatalog/LANCommander.Community.Server.RecompCatalog.Core/LANCommander.Community.Server.RecompCatalog.Core.csproj" />

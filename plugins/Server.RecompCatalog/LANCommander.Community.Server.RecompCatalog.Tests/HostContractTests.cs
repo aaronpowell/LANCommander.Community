@@ -20,7 +20,7 @@ public class HostContractTests
         var plugin = typeof(RecompCatalogPlugin).Assembly.GetCustomAttribute<LANCommanderPluginAttribute>();
 
         Assert.NotNull(plugin);
-        Assert.Equal("2.2.0-alpha.3", plugin.MinHostVersion);
+        Assert.Equal("2.2.0-beta.3", plugin.MinHostVersion);
         Assert.Equal(PluginHost.Server, plugin.Hosts);
     }
 
