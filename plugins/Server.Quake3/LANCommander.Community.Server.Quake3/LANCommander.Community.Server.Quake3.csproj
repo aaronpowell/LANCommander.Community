@@ -4,7 +4,7 @@
     <AssemblyName>LANCommander.Community.Server.Quake3</AssemblyName>
     <PackageId>LANCommander.Community.Server.Quake3</PackageId>
     <IsPackable>true</IsPackable>
-    <Description>Native LANCommander administration of associated Quake 3 servers.</Description>
+    <Description>Quake 3 Server Manager for LANCommander.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/aaronpowell/LANCommander.Community</RepositoryUrl>

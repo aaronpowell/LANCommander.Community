@@ -25,6 +25,7 @@ public sealed class PageTests
         context.Services.AddSingleton<Quake3Administration>();
         var page = context.Render<QuakePage>();
         page.WaitForAssertion(() => Assert.Contains("No associated servers", page.Markup));
+        Assert.Contains("Quake 3 Server Manager", page.Markup);
         Assert.Empty(page.FindAll("iframe"));
         Assert.Empty(page.FindAll("input[type=password]"));
         Assert.Contains("Docker plugin", page.Markup);
