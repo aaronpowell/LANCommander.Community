@@ -103,18 +103,22 @@ and is not saved. Local-only and plain HTTP addresses show warnings.
 
 Verified client notes (see official documentation linked from each tab):
 
-- **GitHub Copilot app** (desktop, not VS Code or Copilot CLI): add a custom
-  server under **Customize > MCP**. GitHub does not document that form's fields,
-  so the tab also shows the Copilot CLI configuration
-  (`~/.copilot/mcp-config.json`), which the app loads automatically.
-  [Docs](https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app#configuring-mcp-servers),
+- **GitHub Copilot app** (desktop, not VS Code or Copilot CLI): GitHub documents
+  adding a custom server under **Customize > MCP** but not that form's fields, so
+  HTTP header support there is unverified. As an alternative, GitHub states that
+  servers configured for Copilot CLI are automatically available in the app;
+  the tab shows the documented CLI header setup (`~/.copilot/mcp-config.json`).
+  GitHub does not separately document how the app applies those headers, so
+  confirm the tools work in the app.
+  [App docs](https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app#configuring-mcp-servers),
   [CLI docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers).
 - **Claude Code**: `claude mcp add --transport http` with an `Authorization`
   header, or a project `.mcp.json` using `${LANCOMMANDER_TOKEN}`.
   [Docs](https://code.claude.com/docs/en/mcp).
 - **Codex** (CLI, IDE extension and ChatGPT desktop app share
-  `~/.codex/config.toml`): `bearer_token_env_var = "LANCOMMANDER_TOKEN"`. The
-  desktop app's add-server form does not document a token field, and
+  `~/.codex/config.toml`): `bearer_token_env_var = "LANCOMMANDER_TOKEN"`, read
+  from the Codex process environment. The docs do not say which environment the
+  desktop app reads or describe a token field in its add-server form.
   `codex mcp login` (OAuth) is not supported by this server.
   [Docs](https://developers.openai.com/codex/mcp).
 

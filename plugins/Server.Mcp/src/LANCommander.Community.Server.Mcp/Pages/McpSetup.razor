@@ -113,33 +113,34 @@
             <Tabs RenderAll="true">
                 <Tab Title="GitHub Copilot app">
                     <p>
-                        For the <strong>GitHub Copilot app</strong> (desktop). VS Code and other IDEs use different
-                        configuration; see <em>General</em>. If your Copilot subscription is managed by an organization,
-                        its policies must allow MCP servers.
+                        For the <strong>GitHub Copilot app</strong> (desktop). VS Code and Copilot CLI are separate clients
+                        with their own configuration. If your Copilot subscription is managed by an organization, its
+                        policies must allow MCP servers.
                     </p>
-                    <h3>Option A: add a custom server in the app</h3>
+                    <h3>Add the server in the app</h3>
+                    <p>GitHub documents these steps for the app:</p>
                     <ol>
                         <li>Select <strong>Customize</strong> in the app sidebar, then <strong>MCP</strong>.</li>
-                        <li>Choose to add a custom server and follow the prompts.</li>
-                        <li>Use the HTTP (Streamable HTTP) type, the endpoint above, and the HTTP header
-                            <code>@McpClientConfiguration.AuthorizationHeader</code>.</li>
+                        <li>Choose to add a custom server, then follow the prompts to install it.</li>
+                        <li>Check that it appears under <strong>Installed</strong>.</li>
                     </ol>
                     <p>
-                        GitHub's documentation does not list the fields of this form. If it does not let you add an HTTP
-                        header, use option B.
+                        LANCommander needs the Streamable HTTP endpoint above and the header
+                        <code>@McpClientConfiguration.AuthorizationHeader</code>. GitHub does not document the fields of the
+                        custom-server form, so it is not verified that the form accepts an HTTP header. If the server shows
+                        HTTP 401 errors or no tools, the app is not sending the token.
                     </p>
-                    <h3>Option B: shared Copilot CLI configuration</h3>
+                    <h3>Alternative: configure it through Copilot CLI</h3>
                     <p>
-                        The app automatically uses MCP servers configured for Copilot CLI. This command, which requires
-                        Copilot CLI, adds the server to <code>~/.copilot/mcp-config.json</code>:
+                        GitHub states that MCP servers configured for Copilot CLI are automatically available in the app.
+                        Copilot CLI documents a header-based setup, stored in <code>~/.copilot/mcp-config.json</code>.
+                        GitHub does not separately document how the app applies headers from that file, so check that
+                        LANCommander tools work in the app before relying on it. This command requires Copilot CLI:
                     </p>
                     @Snippet("Copilot CLI command", McpClientConfiguration.CopilotCliCommand(Endpoint))
                     <p>Or add this entry to <code>~/.copilot/mcp-config.json</code> yourself:</p>
                     @Snippet("Copilot CLI mcp-config.json", McpClientConfiguration.CopilotCliConfiguration(Endpoint))
-                    <p>
-                        Replace the placeholder with your token. It is stored in plain text in that file.
-                        Then check <strong>Customize &gt; Installed</strong> in the app.
-                    </p>
+                    <p>Replace the placeholder with your token. It is stored in plain text in that file.</p>
                     <p>
                         Documentation:
                         <a href="https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app#configuring-mcp-servers" target="_blank" rel="noopener noreferrer">Customizing the GitHub Copilot app</a>,
@@ -173,17 +174,19 @@
                     <p>Or add this to <code>~/.codex/config.toml</code>:</p>
                     @Snippet("Codex config.toml", McpClientConfiguration.CodexConfiguration(Endpoint))
                     <p>
-                        Set <code>@McpClientConfiguration.TokenVariable</code> in the environment Codex runs in (bash/zsh, then PowerShell).
-                        A desktop app started from your OS may not see variables set only in a terminal; set it as a user
-                        environment variable and restart the app.
+                        Set <code>@McpClientConfiguration.TokenVariable</code> in the environment of the Codex process, for example
+                        before starting <code>codex</code> from a terminal (bash/zsh, then PowerShell). Codex's documentation does
+                        not say which environment the ChatGPT desktop app reads; it may not see variables set only in a terminal.
                     </p>
                     @Snippet("Codex bash variable", McpClientConfiguration.BashTokenVariable)
                     @Snippet("Codex PowerShell variable", McpClientConfiguration.PowerShellTokenVariable)
                     <p>
                         The desktop app's <strong>Settings &gt; MCP servers &gt; Add server</strong> form accepts a Streamable HTTP
-                        URL; its documentation does not describe entering a bearer token, so configure the token variable as
-                        above. Do not use <code>codex mcp login</code>: this server does not support OAuth. If the variable is
-                        not set, Codex connects without credentials and LANCommander returns HTTP 401.
+                        URL, but its documentation does not describe entering a bearer token. Use the shared configuration
+                        above. If the variable is not set where Codex runs, Codex connects without credentials and
+                        LANCommander returns HTTP 401. Codex also supports a static <code>http_headers</code> value, but that
+                        stores the token in plain text in <code>config.toml</code>. Do not use <code>codex mcp login</code>:
+                        this server does not support OAuth.
                     </p>
                     <p>
                         Documentation:

@@ -131,6 +131,10 @@ public sealed class McpSetupTests : BunitContext
         Assert.Contains("copilot mcp add --transport http", tabs[0].TextContent);
         Assert.Contains("Customize", tabs[0].TextContent);
         Assert.DoesNotContain(".vscode/mcp.json", tabs[0].TextContent);
+        Assert.Contains("not verified that the form accepts an HTTP header", tabs[0].TextContent);
+        Assert.Contains("Alternative: configure it through Copilot CLI", tabs[0].TextContent);
+        Assert.Contains("check that LANCommander tools work in the app", Normalize(tabs[0].TextContent));
+        Assert.Contains("does not say which environment the ChatGPT desktop app reads", Normalize(tabs[2].TextContent));
         Assert.Contains("claude mcp add --transport http --scope user lancommander \"http://localhost/api/Plugins/Mcp\"", tabs[1].TextContent);
         Assert.Contains("${LANCOMMANDER_TOKEN}", tabs[1].TextContent);
         Assert.Contains("--bearer-token-env-var LANCOMMANDER_TOKEN", tabs[2].TextContent);
@@ -189,6 +193,8 @@ public sealed class McpSetupTests : BunitContext
         Assert.Equal(McpClientConfiguration.CodexConfiguration("http://localhost/api/Plugins/Mcp"), copy.Arguments[0]);
         Assert.Contains("Copied Codex config.toml to clipboard.", cut.Find("p[role=status]").TextContent);
     }
+
+    private static string Normalize(string text) => System.Text.RegularExpressions.Regex.Replace(text, @"\s+", " ");
 
     private static AngleSharp.Dom.IElement ButtonByText(IRenderedComponent<McpSetup> cut, string text) =>
         cut.FindAll("button").Single(x => x.TextContent.Trim() == text);
