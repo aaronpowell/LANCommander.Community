@@ -1,6 +1,8 @@
-# Server.Quake3
+# Quake 3 Server Manager
 
-Native Quake 3 administration in LANCommander Server at `/Plugins/Quake3`.
+Native Quake 3 administration in LANCommander Server at `/Plugins/Quake3`,
+shown in the sidebar as **Quake 3 Server Manager** with the built-in
+`GameController` icon.
 Select an explicitly associated LC server, inspect status, configure FFA,
 duel, team deathmatch or CTF, save presets and apply a startup rotation.
 Next map, change map and **restart match** issue RCON commands; none restart

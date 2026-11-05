@@ -3,7 +3,9 @@ using System.Reflection;
 using System.Runtime.Loader;
 using LANCommander.SDK.Plugins;
 using LANCommander.Server.Plugins;
+using LANCommander.Server.UI.Controls;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
 namespace LANCommander.Community.Server.Quake3.Host.Tests;
@@ -43,9 +45,18 @@ public sealed class PackageLoaderTests
             var pluginType = Assert.Single(assembly.GetTypes(), t => typeof(IPlugin).IsAssignableFrom(t) && !t.IsAbstract);
             var plugin = Assert.IsAssignableFrom<IPlugin>(Activator.CreateInstance(pluginType));
             Assert.Equal(Quake3Plugin.PluginId, plugin.Id);
+            Assert.Equal("Quake 3 Server Manager", plugin.Name);
             var page = Assert.Single(assembly.GetTypes(), t => typeof(ComponentBase).IsAssignableFrom(t)
                 && t.GetCustomAttribute<RouteAttribute>()?.Template == "/Plugins/Quake3");
             Assert.Equal(PluginAccessPolicy.Administrator, page.GetCustomAttribute<PluginAccessAttribute>()!.Policy);
+
+            var services = new ServiceCollection();
+            plugin.ConfigureServices(services);
+            using var provider = services.BuildServiceProvider();
+            var navigation = Assert.Single(provider.GetServices<IServerNavigationExtension>());
+            Assert.Equal("Quake 3 Server Manager", navigation.Label);
+            Assert.Equal("/Plugins/Quake3", navigation.Href);
+            Assert.Equal(nameof(IconType.GameController), navigation.Icon);
         }
         finally
         {
