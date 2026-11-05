@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Server.Quake3')]
+    [ValidateSet('Server.Mcp', 'Server.RecompCatalog', 'Server.Quake3', 'Launcher.MQTT')]
     [string] $Plugin,
     [Parameter(Mandatory)][string] $PackagePath,
     [Parameter(Mandatory)][string] $ExpectedVersion,

@@ -30,6 +30,11 @@ support it.
   `eng/lancommander-source.json`, not from a guessed adapter. Preserve
   `LANCOMMANDER_SOURCE_ROOT` semantics and use `eng/Prepare-LANCommanderSource.ps1`
   or the component validation script to materialize/verify it.
+- Launcher NuGet packages put the complete private payload in `lib/net10.0`;
+  host dependencies are not bundled or restored by the installer. Validate
+  the extracted artifact with `eng/Test-LauncherPackage.ps1` and store mutable
+  settings/journals in the host-preserved `Data` directory. Before a first
+  NuGet upgrade from ZIP, follow the child README's backup/preparation steps.
 - Launcher.MQTT is a generic MQTT integration with a Home Assistant-specific
   discovery/template layer. Preserve both surfaces and the existing documented
   credential/TLS limitations.

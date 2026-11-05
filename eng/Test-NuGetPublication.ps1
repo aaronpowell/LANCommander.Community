@@ -230,11 +230,15 @@ try {
         & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $wrongChecksumDirectory -Publish -PlanOnly
     } 'checksum sidecar' 'Artifact integrity validation'
 
-    $launcherDirectory = Join-Path $testRoot 'launcher'
-    New-Item -ItemType Directory -Path $launcherDirectory | Out-Null
-    Assert-Fails {
-        & $publisher -Plugin Launcher.MQTT -Tag launcher-mqtt-v0.2.0 -ArtifactDirectory $launcherDirectory -Publish -PlanOnly
-    } 'not eligible for NuGet publication' 'ZIP ineligibility'
+    $manifestPath = Join-Path $validDirectory 'release-manifest.json'
+    $manifestText = Get-Content -LiteralPath $manifestPath -Raw
+    try {
+        Set-Content -LiteralPath $manifestPath -Value ($manifestText.Replace('"nupkg"', '"zip"'))
+        Assert-Fails {
+            & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $validDirectory -Publish -PlanOnly
+        } 'manifest does not match' 'ZIP artifact rejected by NuGet publisher'
+    }
+    finally { Set-Content -LiteralPath $manifestPath -Value $manifestText }
 
     $expectedPackagePath = Join-Path $validDirectory 'LANCommander.Community.Server.Mcp.0.2.1.nupkg'
     $signedPackagePath = Join-Path $testRoot 'repository-signed.nupkg'

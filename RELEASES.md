@@ -20,7 +20,7 @@ metadata when changing a component.
 | `Server.Mcp` | `plugins/Server.Mcp/version.txt` | `plugins/Server.Mcp/CHANGELOG.md` | `server-mcp-v<version>` | `LANCommander.Community.Server.Mcp.<version>.nupkg` | GitHub Packages; NuGet.org if `NUGET_API_KEY` is set |
 | `Server.RecompCatalog` | `plugins/Server.RecompCatalog/version.txt` | `plugins/Server.RecompCatalog/CHANGELOG.md` | `server-recompcatalog-v<version>` | `LANCommander.Community.Server.RecompCatalog.Plugin.<version>.nupkg` | GitHub Packages; NuGet.org if `NUGET_API_KEY` is set |
 | `Server.Quake3` | `plugins/Server.Quake3/version.txt` | `plugins/Server.Quake3/CHANGELOG.md` | `server-quake3-v<version>` | `LANCommander.Community.Server.Quake3.<version>.nupkg` | GitHub Packages; NuGet.org if `NUGET_API_KEY` is set |
-| `Launcher.MQTT` | `plugins/Launcher.MQTT/version.txt` | `plugins/Launcher.MQTT/CHANGELOG.md` | `launcher-mqtt-v<version>` | `launcher-mqtt-<version>.zip` | Not a NuGet package |
+| `Launcher.MQTT` | `plugins/Launcher.MQTT/version.txt` | `plugins/Launcher.MQTT/CHANGELOG.md` | `launcher-mqtt-v<version>` | `LANCommander.Community.Launcher.MQTT.Plugin.<version>.nupkg` | GitHub Packages; NuGet.org if `NUGET_API_KEY` is set |
 
 Use complete SemVer in `version.txt`, including prerelease identifiers when
 applicable. The tag must contain that exact version, and the changelog must
@@ -70,7 +70,7 @@ pwsh ./eng/Validate-Plugin.ps1 -Plugin Launcher.MQTT -OutputDirectory ./artifact
 
 `eng/Prepare-LANCommanderSource.ps1` materializes the launcher host source at
 the immutable commit in `eng/lancommander-source.json`. Build and validation
-verify that pin. Keep host-provided assemblies excluded from the launcher ZIP
+verify that pin. Keep host-provided assemblies excluded from the launcher package
 and bundle only private dependencies. Server packages retain their host
 runtime exclusions and loader-identity checks.
 
@@ -83,7 +83,7 @@ runtime exclusions and loader-identity checks.
    configuration identifiers unless a separately reviewed migration is
    authorized.
 2. Run the repository checks and that component's validation command above.
-   Review the generated package/ZIP, its checksum, and inventory in a fresh
+   Review the generated package, its checksum, and inventory in a fresh
    output directory.
 3. Commit the reviewed source and version/changelog changes and merge them to
    `main` through the repository's normal review process. The release plan
@@ -159,15 +159,16 @@ There is one release process: the component tag workflow creates the GitHub
 Release and publishes eligible `.nupkg` components to package feeds. There are
 no separate manual feed-dispatch workflows.
 
-`eng/plugins.json` explicitly identifies feed-eligible components. The three
-server `.nupkg` components publish to GitHub Packages on every successful
+`eng/plugins.json` explicitly identifies feed-eligible components. All four
+`.nupkg` components publish to GitHub Packages on every successful
 component release. NuGet.org publication is automatically attempted for those
 same components only when the repository Actions secret `NUGET_API_KEY` is
 non-empty. If it is absent, the workflow reports the intentional skip; it
 does not fail the GitHub Release or the GitHub Packages job. An explicitly
 configured key that is invalid or a failed push causes the NuGet.org job to
-fail visibly. Launcher.MQTT is a ZIP, so neither feed is attempted regardless
-of whether the key exists; its GitHub Release still proceeds.
+fail visibly. Launcher.MQTT 0.2.1 and later use the same flow as server packages;
+the existing 0.2.0 ZIP release remains unchanged and is not retroactively
+converted or sent to feeds.
 
 To enable NuGet.org for future tag releases, a repository maintainer should
 create a NuGet.org API key scoped to push new versions of only these package
@@ -177,6 +178,7 @@ IDs, give it an expiry, and store it as the repository Actions secret named
 - `LANCommander.Community.Server.Mcp`
 - `LANCommander.Community.Server.RecompCatalog.Plugin`
 - `LANCommander.Community.Server.Quake3`
+- `LANCommander.Community.Launcher.MQTT.Plugin`
 
 Do not use a personal account-wide key or commit the secret. No API key,
 NuGet.org account, trusted publisher, or external service is configured by
@@ -188,12 +190,12 @@ environment or reviewer gate is required by this automatic release design.
 GitHub Packages uses the repository-linked `GITHUB_TOKEN` and requires no PAT
 or extra secret. The reusable release workflow declares `packages: write` as a
 maximum; callers pass that ceiling, while each job narrows its own token. Only
-the eligible server GitHub Packages publisher job has `packages: write` (and
-`contents: read`). Launcher.MQTT's feed job is skipped, and its build/release
-jobs do not receive package-write access. The NuGet.org publisher has
+the eligible GitHub Packages publisher job has `packages: write` (and
+`contents: read`); build/release jobs do not receive package-write access.
+The NuGet.org publisher has
 `contents: read` and receives the optional API key only for its push step. The
 GitHub Release job has `contents: write`.
-`RepositoryUrl` in the server packages points to
+`RepositoryUrl` in the plugin packages points to
 `https://github.com/aaronpowell/LANCommander.Community`, linking packages to
 the repository. After a first authorized GitHub Packages publication,
 maintainers should review package visibility and repository access settings;
@@ -204,22 +206,33 @@ intentionally enabled in GitHub's package settings.
 
 NuGet discovery uses nuspec **package types**, not just search tags.
 LANCommander searches for `LANCommander.Plugin.Server` on the server and
-`LANCommander.Plugin.Launcher` on the launcher; each server plugin package
+`LANCommander.Plugin.Launcher` on the launcher; each plugin package
 also declares the generic `LANCommander.Plugin` type. `PackageTags` are
 supplemental search terms. The server projects declare the generic and server
-types, and the repository/package checks verify the produced metadata.
+types; Launcher.MQTT declares generic and launcher types. Repository/package
+checks verify the produced metadata.
 
-For any future launcher `.nupkg`, its package types must include
-`LANCommander.Plugin` and `LANCommander.Plugin.Launcher`; tags alone do not
-make it discoverable. Launcher.MQTT remains non-packable and ships a
-source-pinned ZIP, so it is ineligible until a separately reviewed packaging
-change validates the launcher loader contract. Do not treat a ZIP as a
-NuGet package.
+Launcher.MQTT's complete private payload is under `lib/net10.0`, including its
+`.deps.json`, private Core/Transport/MQTTnet assemblies and blank
+`homeassistant.example.json`. No live configuration, `Data`, or host assemblies
+are shipped. `eng/Test-LauncherPackage.ps1` exercises local feed discovery,
+the real pinned host package reader/installer, update preservation of `Data`,
+and extracted assembly loading. Existing ZIP users must follow the
+[launcher migration steps](plugins/Launcher.MQTT/README.md#install--upgrade)
+**before** staging a NuGet install, since root configuration/journals are not
+preserved by the host updater.
 
 Discovery metadata does not establish installability. LANCommander inspects
 the single plugin assembly under `lib/<framework>` for its
 `[LANCommanderPlugin]` metadata, including `Hosts` and host-version bounds.
-The relevant upstream discovery source was reviewed at commit
+The launcher installer was rechecked against current upstream main
+[`123ec53`](https://github.com/LANCommander/LANCommander/commit/123ec53a5dd177c2124001ad9f0ce9cb1a6e8acc)
+and the released beta.3 source
+[`9eefa63`](https://github.com/LANCommander/LANCommander/commit/9eefa639a904059c0a03f39e7908332f468828af).
+The beta.3 reader/staging/launcher installer contracts are unchanged in that
+comparison; no unverified host upgrade is needed. The launcher remains bounded
+to beta.3 until another host version is explicitly validated.
+Earlier upstream discovery research was pinned at commit
 [`38f162d`](https://github.com/LANCommander/LANCommander/commit/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d):
 [`PluginPackageTypes.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.SDK/Plugins/PluginPackageTypes.cs),
 [`PluginFeedClient.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.PluginManagement/PluginFeedClient.cs),

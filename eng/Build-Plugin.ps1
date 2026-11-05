@@ -42,6 +42,10 @@ if ($Plugin -eq 'Launcher.MQTT') {
     }
     $env:LANCOMMANDER_SOURCE_ROOT = $hostSource
     & dotnet build $project -c Release --nologo "-p:LANCommanderSourceRoot=$hostSource"
+    if ($LASTEXITCODE -ne 0) { throw "Launcher.MQTT build failed with exit code $LASTEXITCODE." }
+    if ($Package) {
+        & dotnet pack $project -c Release --no-build -o $artifactDirectory --nologo "-p:LANCommanderSourceRoot=$hostSource"
+    }
 }
 elseif ($Package) {
     & dotnet pack $project -c Release -o $artifactDirectory --nologo
@@ -55,19 +59,15 @@ if (-not $Package) {
     return
 }
 
+$asset = Join-Path $artifactDirectory "$packageId.$version.nupkg"
+if (-not (Test-Path -LiteralPath $asset)) {
+    throw "Pack did not produce the expected selected-plugin asset: $asset"
+}
+& (Join-Path $PSScriptRoot 'Test-NuGetPackage.ps1') -Plugin $Plugin -PackagePath $asset -ExpectedVersion $version -RequireRepositoryUrl
 if ($Plugin -eq 'Launcher.MQTT') {
-    $packagingScript = Join-Path $repositoryRoot 'plugins/Launcher.MQTT/tools/Package-TestBuild.ps1'
-    & $packagingScript -OutputDirectory $artifactDirectory -ExpectedVersion $version
-    if ($LASTEXITCODE -ne 0) { throw "Launcher.MQTT ZIP packaging failed with exit code $LASTEXITCODE." }
-    $asset = Join-Path $artifactDirectory "launcher-mqtt-$version.zip"
-    & (Join-Path $PSScriptRoot 'Test-LauncherZip.ps1') -PackagePath $asset -ExpectedVersion $version
+    & (Join-Path $PSScriptRoot 'Test-LauncherPackage.ps1') -PackagePath $asset -ExpectedVersion $version
 }
 else {
-    $asset = Join-Path $artifactDirectory "$packageId.$version.nupkg"
-    if (-not (Test-Path -LiteralPath $asset)) {
-        throw "Pack did not produce the expected selected-plugin asset: $asset"
-    }
-    & (Join-Path $PSScriptRoot 'Test-NuGetPackage.ps1') -Plugin $Plugin -PackagePath $asset -ExpectedVersion $version
     if ($Plugin -eq 'Server.Mcp') {
         & (Join-Path $repositoryRoot 'plugins/Server.Mcp/eng/Test-Package.ps1') -PackagePath $asset -ExpectedVersion $version
     }

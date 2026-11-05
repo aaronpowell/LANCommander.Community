@@ -192,9 +192,15 @@ try {
     Assert-Fails {
         & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.2 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly
     } 'does not match' 'Release tag selection'
-    Assert-Fails {
-        & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Launcher.MQTT -Tag launcher-mqtt-v0.2.0 -ArtifactDirectory $testRoot -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly
-    } 'does not produce a GitHub Packages-eligible' 'Launcher ZIP ineligibility'
+    $manifestPath = Join-Path $artifactDirectory 'release-manifest.json'
+    $manifestText = Get-Content -LiteralPath $manifestPath -Raw
+    try {
+        Set-Content -LiteralPath $manifestPath -Value ($manifestText.Replace('"nupkg"', '"zip"'))
+        Assert-Fails {
+            & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly
+        } 'manifest does not match' 'ZIP artifact rejected by NuGet publisher'
+    }
+    finally { Set-Content -LiteralPath $manifestPath -Value $manifestText }
     Assert-Fails {
         & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $artifactDirectory -Owner someone-else -Repository someone-else/LANCommander.Community -Publish -PlanOnly
     } 'restricted to the canonical' 'Repository/owner guard'

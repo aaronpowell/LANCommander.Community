@@ -10,6 +10,7 @@ using LauncherGame = LANCommander.Launcher.Data.Models.Game;
 using System.Text.Json;
 using LANCommander.Launcher.Plugins.Extensions;
 using LANCommander.Community.Launcher.MQTT;
+using NuGet.Versioning;
 
 namespace LANCommander.Community.Launcher.MQTT.HostLoader.Tests;
 
@@ -63,7 +64,12 @@ public sealed class PluginLoadContextTests
         Assert.Equal(
             pluginAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion,
             plugin?.Version);
-        Assert.Equal(new Version(0, 2, 0, 0), pluginAssembly.GetName().Version);
+        var expectedVersion = Environment.GetEnvironmentVariable("LANCOMMANDER_MQTT_PACKAGE_VERSION");
+        Assert.False(string.IsNullOrEmpty(expectedVersion));
+        Assert.Equal(expectedVersion, plugin?.Version);
+        var packageVersion = NuGetVersion.Parse(expectedVersion!);
+        Assert.Equal(new Version(packageVersion.Major, packageVersion.Minor, packageVersion.Patch, 0),
+            pluginAssembly.GetName().Version);
 
         var mqttAssembly = context.LoadFromAssemblyName(new AssemblyName("MQTTnet"));
         Assert.Equal(Path.Combine(pluginDirectory, "MQTTnet.dll"), mqttAssembly.Location);
@@ -114,6 +120,7 @@ public sealed class PluginLoadContextTests
             .ToArray();
 
         Assert.Empty(bundledHostAssemblies);
-        Assert.True(File.Exists(Path.Combine(pluginDirectory, "homeassistant.json")));
+        Assert.True(File.Exists(Path.Combine(pluginDirectory, "homeassistant.example.json")));
+        Assert.False(File.Exists(Path.Combine(pluginDirectory, "homeassistant.json")));
     }
 }

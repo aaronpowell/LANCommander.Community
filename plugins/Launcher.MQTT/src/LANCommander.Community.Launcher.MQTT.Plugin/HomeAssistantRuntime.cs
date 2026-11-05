@@ -19,18 +19,18 @@ public sealed class HomeAssistantRuntime(IServiceProvider root, ILogger<HomeAssi
 
     public async Task InitializeAsync(string directory, CancellationToken token)
     {
-        _directory = directory;
         _host = new LANCommanderGameLaunchHost(root, () => Settings);
         _coordinator = new LaunchCoordinator(_host, []);
         try
         {
-            if (!File.Exists(Path.Combine(directory, "homeassistant.json")))
+            _directory = HomeAssistantPluginSettings.PrepareDataDirectory(directory);
+            if (!File.Exists(Path.Combine(_directory, "homeassistant.json")))
             {
                 Status = "Configure the broker and exposed games here, then Save and apply.";
                 logger.LogWarning("Home Assistant MQTT is not configured. Open Launcher settings.");
                 return;
             }
-            var loaded = await HomeAssistantPluginSettings.LoadAsync(directory, token).ConfigureAwait(false);
+            var loaded = await HomeAssistantPluginSettings.LoadAsync(_directory, token).ConfigureAwait(false);
             loaded.CreateMqttSettings();
             _settings = loaded;
             await StartTransportAsync().ConfigureAwait(false);

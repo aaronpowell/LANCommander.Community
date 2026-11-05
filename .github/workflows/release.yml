@@ -163,3 +163,5 @@ jobs:
       tag: ${{ needs.plan.outputs.tag }}
       artifact_run_id: ${{ needs.plan.outputs.artifact_run_id }}
       artifact_run_attempt: ${{ needs.plan.outputs.artifact_run_attempt }}
+    secrets:
+      nuget_api_key: ${{ secrets.NUGET_API_KEY }}

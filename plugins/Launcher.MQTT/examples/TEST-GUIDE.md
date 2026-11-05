@@ -1,4 +1,4 @@
-# Launcher test package 0.2.0
+# Launcher test package 0.2.1
 
 Actual Windows GUI Launcher plugin targeting **LANCommander v2.2.0-beta.3**,
 source commit `9eefa639a904059c0a03f39e7908332f468828af`, .NET 10.
@@ -8,12 +8,19 @@ Its new GUI and real install workflow still require your smoke test.
 
 ## Install / upgrade
 
-1. Exit the Launcher completely. Extract the ZIP somewhere temporary.
+1. For an existing ZIP install, exit the Launcher and follow the
+   [README migration steps](../README.md#install--upgrade) **before** installing
+   the NuGet package. Back up settings and journal securely outside `Plugins`,
+   then move them to `Data` within the normalized plugin folder. The host
+   updater cannot preserve root files; uninstall deletes `Data` as well.
 2. Locate the existing Launcher **data/config root**, not just the executable
    directory. `LANCOMMANDER_DATA_DIR`, if set, is the exact root; otherwise it is
    normally `Data` beneath the Launcher's working directory. Protected locations
    can use local application data instead. Use the existing configuration/DB root.
-3. Copy `Plugins\LANCommander.Community.Launcher.MQTT.Plugin` under that root's `Plugins`:
+3. Use the Launcher's plugin manager to install
+   `LANCommander.Community.Launcher.MQTT.Plugin.0.2.1.nupkg` from a local file
+   or configured feed, and restart to apply the staged install. The resulting
+   layout is:
 
    ```text
    <Launcher data root>\
@@ -24,16 +31,20 @@ Its new GUI and real install workflow still require your smoke test.
          LANCommander.Community.Launcher.MQTT.Core.dll
          LANCommander.Community.Launcher.MQTT.Transport.dll
          MQTTnet.dll
-         homeassistant.json
+         homeassistant.example.json
+         Data\
+           homeassistant.json
+           discovery-topics.json
    ```
 
-**When upgrading an older `LanCommander.HomeAssistant.Plugin` folder, back up
-`homeassistant.json` and `discovery-topics.json` if present, remove only that old
-folder, install the new `LANCommander.Community.Launcher.MQTT.Plugin` folder, and
-restore the two files there before launching.** Do not overwrite populated config
-with the blank template. Existing `Favorites` migrate to selected exposure
-automatically. Keep the same client ID/topic prefix to update existing entities. No host SDK,
-Launcher DLLs, build-output `runtimes` directory or ZIP belongs in the plugin folder.
+For manual installation, extract only `lib/net10.0` contents into the normalized
+plugin folder, not the entire nupkg wrapper. Preserve `Data`; a manual update
+can also move legacy root settings/journal there on first start, but that is
+too late for a NuGet updater that has already deleted root files.
+Do not overwrite populated settings with the blank template. Existing
+`Favorites` migrate to selected exposure automatically. Keep the same client
+ID/topic prefix to update existing entities. No host SDK, Launcher DLLs,
+build-output `runtimes` directory, ZIP or nupkg wrapper belongs in the plugin folder.
 
 ## Configure in the Launcher
 
@@ -56,7 +67,7 @@ identity requires the old broker online so retained discovery can be removed fir
 The first eight checked games preserve legacy direct launch buttons; all mode
 exposes the full catalog through one select rather than a button per game.
 
-Manual JSON remains supported (restart after editing):
+Manual `Data/homeassistant.json` remains supported (restart after editing):
 
 - `BrokerHost`, `BrokerPort`, `BrokerUsername`, `BrokerPassword`, `UseTls`.
 - `ClientId`: unique stable 8-64 ASCII letters/digits/underscore/hyphen identifier.
@@ -168,7 +179,10 @@ administration if removing the plugin entirely.
 
 Automated checks build from isolated pinned beta.3 source, exercise the actual
 plugin loader/default host type identity/headless initialization and inspect the
-four-DLL inventory. Core tests cover selection, dynamic eligibility, deduplication,
+four-DLL inventory. The actual NuGet artifact is searched on a local feed,
+installed/staged by the pinned host package manager, upgraded with Data
+preservation, and rejected on the wrong host or outside the verified host range.
+Core tests cover selection, dynamic eligibility, deduplication,
 separate install/run, failure outcomes and destination guards. Real local MQTT 5
 plaintext and self-signed/wrong-host TLS tests cover auth, retained rejection,
 simulated launch/install, no auto-launch, live catalog cleanup, journal cleanup,

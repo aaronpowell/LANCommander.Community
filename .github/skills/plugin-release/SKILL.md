@@ -29,13 +29,16 @@ and retry guarantees. Do not copy its changing component table here.
    the tag, version file, exact source commit, and `main` ancestry.
 5. **Stop before creating or pushing a release tag unless the user explicitly
    authorizes that exact tag push.** A tag starts the public GitHub Release
-   workflow and automatically publishes eligible server packages to GitHub
+   workflow and automatically publishes eligible plugin packages to GitHub
    Packages, plus NuGet.org if the repository secret `NUGET_API_KEY` exists.
    Documentation or source-edit authorization is not publication
    authorization.
-6. Launcher.MQTT releases are ZIP-only and are not sent to either NuGet feed.
-   Preserve its pinned LANCommander source materialization and do not claim
-   that a ZIP is a NuGet-installable package.
+6. Launcher.MQTT now builds a real NuGet payload, declares the launcher-specific
+   package type, and uses the same feed jobs as server plugins. Preserve its
+   pinned beta.3 host contracts, private-dependency inventory and extracted
+   package install/loader tests. Follow its README's existing-ZIP upgrade
+   preparation: the host updater preserves only `Data`, not root settings or
+   discovery journals. Never replace the published 0.2.0 ZIP/tag.
 7. On failure, inspect the run and state at every destination before retrying.
    Rerun failed downstream jobs for the same tag to promote the original
    checked build artifact. For a new main-only recovery dispatch after a build
