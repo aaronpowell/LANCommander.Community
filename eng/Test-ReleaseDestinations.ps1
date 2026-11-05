@@ -3,8 +3,13 @@ $repositoryRoot = Split-Path $PSScriptRoot -Parent
 Import-Module (Join-Path $PSScriptRoot 'ReleaseDestinations.psm1') -Force
 
 function Assert-Fails {
-    param([scriptblock] $Action, [string] $Name)
-    try { & $Action } catch { return }
+    param([scriptblock] $Action, [string] $ExpectedText, [string] $Name)
+    try { & $Action } catch {
+        if ($_.Exception.Message -notlike "*$ExpectedText*") {
+            throw "$Name failed for the wrong reason: $($_.Exception.Message)"
+        }
+        return
+    }
     throw "$Name unexpectedly succeeded."
 }
 
@@ -70,6 +75,8 @@ if ($launcherWithKey.artifactFormat -cne 'zip' -or
     $launcherWithKey.publishToNuGetOrg) {
     throw 'Launcher ZIP releases must not select either NuGet feed, even when a NuGet.org key exists.'
 }
-Assert-Fails { Get-ReleaseDestinationPlan -Plugin Server.Unknown -NuGetApiKeyAvailable $true } 'Unknown component'
+Assert-Fails {
+    Get-ReleaseDestinationPlan -Plugin Server.Unknown -NuGetApiKeyAvailable $true
+} "Unknown release component 'Server.Unknown'." 'Unknown release component'
 
 Write-Output 'Automatic release destination selection tests passed.'
