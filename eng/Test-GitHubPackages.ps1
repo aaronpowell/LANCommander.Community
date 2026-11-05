@@ -228,6 +228,28 @@ try {
     if ((Get-GitHubNuGetPackageBaseAddress -ServiceIndex $serviceIndex) -cne 'https://nuget.pkg.github.com/aaronpowell/download') {
         throw 'GitHub Packages flat-container resource was not selected.'
     }
+
+    $publisherSource = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Raw
+    if ($publisherSource -notmatch 'New-GitHubNuGetConfigFile\s+-Owner\s+\$Owner\s+-Token\s+\$env:GITHUB_TOKEN') {
+        throw 'GitHub Packages publisher must use the tested NuGet source-config generator.'
+    }
+    $configPath = Join-Path $testRoot 'github-nuget.config'
+    $testOwner = 'owner&<"quoted'
+    $testToken = 'token&<>"''quoted'
+    New-GitHubNuGetConfigFile -Owner $testOwner -Token $testToken `
+        -FeedUrl 'https://nuget.pkg.github.com/owner/index.json' -Path $configPath | Out-Null
+    $config = [System.Xml.XmlDocument]::new()
+    $config.Load($configPath)
+    $sourceNode = $config.SelectSingleNode('/configuration/packageSources/add[@key="github"]')
+    $clearNode = $config.SelectSingleNode('/configuration/packageSources/clear')
+    $usernameNode = $config.SelectSingleNode('/configuration/packageSourceCredentials/github/add[@key="Username"]')
+    $tokenNode = $config.SelectSingleNode('/configuration/packageSourceCredentials/github/add[@key="ClearTextPassword"]')
+    if ($null -eq $sourceNode -or $sourceNode.GetAttribute('value') -cne 'https://nuget.pkg.github.com/owner/index.json' -or
+        $null -eq $clearNode -or $null -eq $usernameNode -or $usernameNode.GetAttribute('value') -cne $testOwner -or
+        $null -eq $tokenNode -or $tokenNode.GetAttribute('value') -cne $testToken) {
+        throw 'Generated NuGet source config must contain valid, correctly escaped source and credential values.'
+    }
+
     Assert-Fails {
         Get-GitHubNuGetPackageBaseAddress -ServiceIndex (@'
 {"resources":[{"@id":"https://example.invalid/","@type":"PackageBaseAddress/3.0.0"}]}
