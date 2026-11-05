@@ -110,11 +110,9 @@ if (-not $Publish) {
 if ([string]::IsNullOrWhiteSpace($env:GITHUB_TOKEN)) {
     throw 'GitHub Packages publication was explicitly requested, but GITHUB_TOKEN is unavailable.'
 }
-if ($env:GITHUB_ACTIONS -cne 'true' -or
-    $env:GITHUB_REF -cne "refs/tags/$Tag" -or
-    $env:GITHUB_REPOSITORY -cne $Repository) {
-    throw 'GitHub Packages publication must run from the component release workflow for the exact tag.'
-}
+Assert-ReleaseWorkflowContext -Tag $Tag -Repository $env:GITHUB_REPOSITORY `
+    -ExpectedRepository $Repository -Actions $env:GITHUB_ACTIONS `
+    -EventName $env:GITHUB_EVENT_NAME -Ref $env:GITHUB_REF
 
 $tagCommit = (& git -C $repositoryRoot rev-parse "$Tag^{commit}").Trim()
 if ($LASTEXITCODE -ne 0 -or $manifest.sourceCommit -cne $tagCommit) {

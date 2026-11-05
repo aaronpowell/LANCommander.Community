@@ -48,6 +48,24 @@ function Get-PluginVersion {
     return $version
 }
 
+function Assert-ReleaseWorkflowContext {
+    param(
+        [Parameter(Mandatory)][string] $Tag,
+        [Parameter(Mandatory)][AllowNull()][AllowEmptyString()][string] $Repository,
+        [Parameter(Mandatory)][string] $ExpectedRepository,
+        [Parameter(Mandatory)][AllowNull()][AllowEmptyString()][string] $Actions,
+        [Parameter(Mandatory)][AllowNull()][AllowEmptyString()][string] $EventName,
+        [Parameter(Mandatory)][AllowNull()][AllowEmptyString()][string] $Ref
+    )
+
+    $tagPush = $EventName -ceq 'push' -and $Ref -ceq "refs/tags/$Tag"
+    $mainRecovery = $EventName -ceq 'workflow_dispatch' -and $Ref -ceq 'refs/heads/main'
+    if ($Actions -cne 'true' -or $Repository -cne $ExpectedRepository -or
+        (-not $tagPush -and -not $mainRecovery)) {
+        throw 'Publication must run through the protected GitHub Actions workflow for an exact component tag or main-branch recovery dispatch.'
+    }
+}
+
 function Resolve-PluginSelection {
     [CmdletBinding()]
     param(
@@ -101,4 +119,4 @@ function Resolve-PluginSelection {
     return @($selected.ToArray())
 }
 
-Export-ModuleMember -Function Get-PluginRegistry, Get-PluginVersion, Resolve-PluginSelection, Test-PluginSemVer
+Export-ModuleMember -Function Assert-ReleaseWorkflowContext, Get-PluginRegistry, Get-PluginVersion, Resolve-PluginSelection, Test-PluginSemVer

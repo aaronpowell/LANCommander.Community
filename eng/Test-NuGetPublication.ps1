@@ -149,6 +149,14 @@ try {
         $skipJob -notmatch 'NUGET_API_KEY repository secret is not configured') {
         throw 'NuGet.org must be automatically selected only for eligible packages with a configured API key, or report its intentional skip.'
     }
+    Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+        -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
+        -EventName 'workflow_dispatch' -Ref 'refs/heads/main'
+    Assert-Fails {
+        Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+            -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
+            -EventName 'workflow_dispatch' -Ref 'refs/heads/feature'
+    } 'main-branch recovery dispatch' 'Non-main NuGet recovery dispatch'
     if (Test-Path -LiteralPath (Join-Path $repositoryRoot '.github/workflows/publish-nuget.yml')) {
         throw 'The separate manual NuGet.org workflow must not remain.'
     }

@@ -43,6 +43,9 @@ and retry guarantees. Do not copy its changing component table here.
    non-signature payload entries. Mismatches fail closed. Never reuse a
    version, force-move a tag, overwrite a package, or use `--skip-duplicate`
    to suppress a conflict.
+   If a tag run fails before jobs start, inspect its details; when no release
+   or package was created, use the canonical main-only recovery dispatch in
+   `RELEASES.md` with the exact existing tag. Do not recreate or move the tag.
 
 Never create or push tags, publish releases/packages, configure credentials,
 or change package visibility/access without explicit user authorization.
