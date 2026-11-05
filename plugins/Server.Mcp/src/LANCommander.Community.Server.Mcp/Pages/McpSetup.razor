@@ -1,11 +1,11 @@
 @page "/Plugins/Mcp"
 @namespace LANCommander.Community.Server.Mcp.Pages
+@using LANCommander.Community.Server.Mcp
 @using LANCommander.Server.Plugins
 @using LANCommander.Server.UI.Controls
 @using Microsoft.AspNetCore.Components
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
-@using System.Text.Json
 @implements IAsyncDisposable
 @attribute [PluginAccess(PluginAccessLevel.Administrator)]
 @inject IJSRuntime JS
@@ -15,44 +15,215 @@
 <PageHeader Title="MCP setup" />
 <PageContent>
     <Flex Vertical Gap="Gap.Medium">
-        <p>Connect an MCP client to <code>@Endpoint</code> using an administrator access token.</p>
-        <Alert Warning Title="Temporary session-token workaround">
-            This uses LC's normal password login, not a permanent or MCP-scoped API key.
-            Generating a token replaces this account's refresh token and can prevent other clients
-            from refreshing their sessions. Use an administrator account. Password login must be enabled.
-            Use HTTPS and keep MCP client approval enabled for mutations.
-        </Alert>
-        <form @ref="_form" @onsubmit="GenerateAsync" @onsubmit:preventDefault>
-            <Flex Vertical Gap="Gap.Medium">
-                <label>LC username <input name="username" autocomplete="username" required disabled="@_busy" /></label>
-                <label>LC password <input name="password" type="password" autocomplete="current-password" required disabled="@_busy" /></label>
-                <Checkbox @bind-Value="_acknowledged" Disabled="_busy">
-                    I understand this creates an administrator session and replaces this account's refresh token.
-                </Checkbox>
-                <Button Primary Submit Loading="_busy" Disabled="@(!_acknowledged)">Generate access token</Button>
-            </Flex>
-        </form>
-        @if (_error is not null)
-        {
-            <Alert Danger Title="MCP setup">@_error</Alert>
-        }
-        @if (_session is not null)
-        {
-            <Alert Info Title="Session token">
-                Expires @_session.Expiration.ToUniversalTime().ToString("u").
-                The refresh token is discarded. This page does not automatically renew tokens.
-                Clear or leave this page when finished; clearing does not revoke the token.
-            </Alert>
-            <label>Access token
-                <input type="password" value="@_session.AccessToken" readonly autocomplete="off" aria-label="Access token" />
+        <p>
+            This plugin serves MCP over <strong>Streamable HTTP</strong> at <code>@Endpoint</code>.
+            Every request needs an LANCommander <strong>administrator</strong> bearer token in the
+            <code>Authorization</code> header. There is no OAuth, stdio or SSE transport.
+        </p>
+
+        <section aria-labelledby="mcp-address-heading">
+            <h2 id="mcp-address-heading">1. Server address</h2>
+            <p>
+                Detected from this LANCommander session: <code>@DetectedEndpoint</code>.
+                MCP clients run on their own machines, so use an address they can reach.
+                If you opened this page through <code>localhost</code> or a different name than clients use,
+                enter the public LANCommander address (including any reverse-proxy subpath) below.
+                It only changes the examples on this page and is not saved.
+            </p>
+            <label>
+                LANCommander address used by MCP clients
+                <input type="url" name="baseAddress" value="@_baseAddress" @onchange="SetBaseAddress"
+                       autocomplete="off" spellcheck="false" aria-describedby="mcp-address-help" />
             </label>
-            <Flex Gap="Gap.Small">
-                <Button OnClick="CopyTokenAsync">Copy access token</Button>
-                <Button OnClick="CopyConfigurationAsync">Copy MCP configuration</Button>
-                <Button OnClick="Clear">Clear token</Button>
-            </Flex>
-            <p>The copied configuration contains your token. Keep it private and do not commit it.</p>
-        }
+            <p id="mcp-address-help">
+                Example: <code>https://lancommander.example.com/</code> or <code>https://example.com/lancommander/</code>.
+                Behind a reverse proxy, forward the original <code>Host</code> header and
+                <code>X-Forwarded-Proto</code>, and serve LANCommander at the same subpath, so it sees its public address.
+            </p>
+            @if (_addressError is not null)
+            {
+                <Alert Danger Title="Invalid address">@_addressError Showing the detected address instead.</Alert>
+            }
+            @switch (McpClientConfiguration.Classify(Endpoint))
+            {
+                case McpEndpointReachability.LocalOnly:
+                    <Alert Warning Title="Local address">
+                        <code>@Endpoint</code> only works for an MCP client on the LANCommander server itself.
+                        Enter the address other machines use to reach LANCommander.
+                    </Alert>
+                    break;
+                case McpEndpointReachability.InsecureRemote:
+                    <Alert Warning Title="Unencrypted address">
+                        This address uses HTTP, so the administrator token is sent unencrypted.
+                        Enable HTTPS in LANCommander or a reverse proxy before connecting over a network you do not fully trust.
+                    </Alert>
+                    break;
+            }
+            @Snippet("MCP endpoint", Endpoint)
+        </section>
+
+        <section aria-labelledby="mcp-token-heading">
+            <h2 id="mcp-token-heading">2. Administrator access token</h2>
+            <Alert Warning Title="Temporary session-token workaround">
+                This uses LC's normal password login, not a permanent or MCP-scoped API key.
+                Generating a token replaces this account's refresh token and can prevent other clients
+                from refreshing their sessions. Use an administrator account. Password login must be enabled.
+                Use HTTPS and keep MCP client approval enabled for mutations.
+            </Alert>
+            <form @ref="_form" @onsubmit="GenerateAsync" @onsubmit:preventDefault>
+                <Flex Vertical Gap="Gap.Medium">
+                    <label>LC username <input name="username" autocomplete="username" required disabled="@_busy" /></label>
+                    <label>LC password <input name="password" type="password" autocomplete="current-password" required disabled="@_busy" /></label>
+                    <Checkbox @bind-Value="_acknowledged" Disabled="_busy">
+                        I understand this creates an administrator session and replaces this account's refresh token.
+                    </Checkbox>
+                    <Button Primary Submit Loading="_busy" Disabled="@(!_acknowledged)">Generate access token</Button>
+                </Flex>
+            </form>
+            @if (_error is not null)
+            {
+                <Alert Danger Title="MCP setup">@_error</Alert>
+            }
+            @if (_session is not null)
+            {
+                <Alert Info Title="Session token">
+                    Expires @_session.Expiration.ToUniversalTime().ToString("u").
+                    The refresh token is discarded. This page does not automatically renew tokens.
+                    Clear or leave this page when finished; clearing does not revoke the token.
+                </Alert>
+                <label>Access token
+                    <input type="password" value="@_session.AccessToken" readonly autocomplete="off" aria-label="Access token" />
+                </label>
+                <Flex Gap="Gap.Small">
+                    <Button OnClick="CopyTokenAsync">Copy access token</Button>
+                    <Button OnClick="CopyConfigurationAsync">Copy VS Code configuration with token</Button>
+                    <Button OnClick="Clear">Clear token</Button>
+                </Flex>
+                <p>Copied values contain your token. Keep them private and do not commit them.</p>
+            }
+            <p>
+                The client examples below never contain your token. Replace <code>@McpClientConfiguration.TokenPlaceholder</code>
+                or set the <code>@McpClientConfiguration.TokenVariable</code> environment variable where noted.
+                Tokens expire; repeat this step and update the client when requests start returning HTTP 401.
+            </p>
+        </section>
+
+        <section aria-labelledby="mcp-clients-heading">
+            <h2 id="mcp-clients-heading">3. Add LANCommander to your MCP client</h2>
+            <Tabs RenderAll="true">
+                <Tab Title="GitHub Copilot app">
+                    <p>
+                        For the <strong>GitHub Copilot app</strong> (desktop). VS Code and Copilot CLI are separate clients
+                        with their own configuration. If your Copilot subscription is managed by an organization, its
+                        policies must allow MCP servers.
+                    </p>
+                    <h3>Add the server in the app</h3>
+                    <p>GitHub documents these steps for the app:</p>
+                    <ol>
+                        <li>Select <strong>Customize</strong> in the app sidebar, then <strong>MCP</strong>.</li>
+                        <li>Choose to add a custom server, then follow the prompts to install it.</li>
+                        <li>Check that it appears under <strong>Installed</strong>.</li>
+                    </ol>
+                    <p>
+                        LANCommander needs the Streamable HTTP endpoint above and the header
+                        <code>@McpClientConfiguration.AuthorizationHeader</code>. GitHub does not document the fields of the
+                        custom-server form, so it is not verified that the form accepts an HTTP header. If the server shows
+                        HTTP 401 errors or no tools, the app is not sending the token.
+                    </p>
+                    <h3>Alternative: configure it through Copilot CLI</h3>
+                    <p>
+                        GitHub states that MCP servers configured for Copilot CLI are automatically available in the app.
+                        Copilot CLI documents a header-based setup, stored in <code>~/.copilot/mcp-config.json</code>.
+                        GitHub does not separately document how the app applies headers from that file, so check that
+                        LANCommander tools work in the app before relying on it. This command requires Copilot CLI:
+                    </p>
+                    @Snippet("Copilot CLI command", McpClientConfiguration.CopilotCliCommand(Endpoint))
+                    <p>Or add this entry to <code>~/.copilot/mcp-config.json</code> yourself:</p>
+                    @Snippet("Copilot CLI mcp-config.json", McpClientConfiguration.CopilotCliConfiguration(Endpoint))
+                    <p>Replace the placeholder with your token. It is stored in plain text in that file.</p>
+                    <p>
+                        Documentation:
+                        <a href="https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app#configuring-mcp-servers" target="_blank" rel="noopener noreferrer">Customizing the GitHub Copilot app</a>,
+                        <a href="https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers" target="_blank" rel="noopener noreferrer">Adding MCP servers for Copilot CLI</a>.
+                    </p>
+                </Tab>
+                <Tab Title="Claude Code">
+                    <p>Add the server for your user account. Claude Code stores the header, including your token, in <code>~/.claude.json</code>:</p>
+                    @Snippet("Claude Code command", McpClientConfiguration.ClaudeCodeCommand(Endpoint))
+                    <p>
+                        To keep the token out of configuration files, use a project <code>.mcp.json</code> instead.
+                        Claude Code expands <code>${@McpClientConfiguration.TokenVariable}</code> from the environment it starts in:
+                    </p>
+                    @Snippet("Claude Code .mcp.json", McpClientConfiguration.ClaudeCodeProjectConfiguration(Endpoint))
+                    <p>Set the variable before starting <code>claude</code> (bash/zsh, then PowerShell):</p>
+                    @Snippet("Claude Code bash variable", McpClientConfiguration.BashTokenVariable)
+                    @Snippet("Claude Code PowerShell variable", McpClientConfiguration.PowerShellTokenVariable)
+                    <p>Check the connection with <code>claude mcp list</code> or <code>/mcp</code> in a session.</p>
+                    <p>
+                        Documentation:
+                        <a href="https://code.claude.com/docs/en/mcp" target="_blank" rel="noopener noreferrer">Connect Claude Code to tools via MCP</a>.
+                    </p>
+                </Tab>
+                <Tab Title="Codex">
+                    <p>
+                        Codex CLI, the Codex IDE extension and the ChatGPT desktop app share Codex MCP configuration in
+                        <code>~/.codex/config.toml</code>. Codex reads the bearer token from the
+                        <code>@McpClientConfiguration.TokenVariable</code> environment variable, so the token is not written to the file.
+                    </p>
+                    @Snippet("Codex command", McpClientConfiguration.CodexCommand(Endpoint))
+                    <p>Or add this to <code>~/.codex/config.toml</code>:</p>
+                    @Snippet("Codex config.toml", McpClientConfiguration.CodexConfiguration(Endpoint))
+                    <p>
+                        Set <code>@McpClientConfiguration.TokenVariable</code> in the environment of the Codex process, for example
+                        before starting <code>codex</code> from a terminal (bash/zsh, then PowerShell). Codex's documentation does
+                        not say which environment the ChatGPT desktop app reads; it may not see variables set only in a terminal.
+                    </p>
+                    @Snippet("Codex bash variable", McpClientConfiguration.BashTokenVariable)
+                    @Snippet("Codex PowerShell variable", McpClientConfiguration.PowerShellTokenVariable)
+                    <p>
+                        The desktop app's <strong>Settings &gt; MCP servers &gt; Add server</strong> form accepts a Streamable HTTP
+                        URL, but its documentation does not describe entering a bearer token. Use the shared configuration
+                        above. If the variable is not set where Codex runs, Codex connects without credentials and
+                        LANCommander returns HTTP 401. Codex also supports a static <code>http_headers</code> value, but that
+                        stores the token in plain text in <code>config.toml</code>. Do not use <code>codex mcp login</code>:
+                        this server does not support OAuth.
+                    </p>
+                    <p>
+                        Documentation:
+                        <a href="https://developers.openai.com/codex/mcp" target="_blank" rel="noopener noreferrer">Codex MCP</a>,
+                        <a href="https://developers.openai.com/codex/config-reference" target="_blank" rel="noopener noreferrer">Codex configuration reference</a>.
+                    </p>
+                </Tab>
+                <Tab Title="General">
+                    <p>Any MCP client that supports Streamable HTTP and custom headers can connect:</p>
+                    <ul>
+                        <li>Transport: Streamable HTTP (stateless). No stdio, SSE or WebSocket transport.</li>
+                        <li>URL: <code>@Endpoint</code></li>
+                        <li>Header: <code>@McpClientConfiguration.AuthorizationHeader</code></li>
+                        <li>Authentication: LANCommander administrator bearer token. No OAuth discovery or anonymous access.</li>
+                        <li>Browser-based clients must send an <code>Origin</code> matching LANCommander's own address.</li>
+                    </ul>
+                    <p>For example, VS Code reads <code>.vscode/mcp.json</code> and prompts for the token:</p>
+                    @Snippet("VS Code .vscode/mcp.json", McpClientConfiguration.VsCodeConfiguration(Endpoint))
+                    <p>
+                        Documentation:
+                        <a href="https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#streamable-http" target="_blank" rel="noopener noreferrer">MCP Streamable HTTP transport</a>,
+                        <a href="https://code.visualstudio.com/docs/copilot/customization/mcp-servers" target="_blank" rel="noopener noreferrer">MCP servers in VS Code</a>.
+                    </p>
+                </Tab>
+            </Tabs>
+        </section>
+
+        <section aria-labelledby="mcp-troubleshooting-heading">
+            <h2 id="mcp-troubleshooting-heading">Troubleshooting</h2>
+            <ul>
+                <li><strong>HTTP 401</strong>: the token is missing, mistyped or expired. Generate a new token and update the client.</li>
+                <li><strong>HTTP 403</strong>: the token belongs to a non-administrator, or a browser sent a different <code>Origin</code>.</li>
+                <li><strong>HTTP 404</strong>: check the address and subpath, and that the plugin is installed and LANCommander was restarted.</li>
+                <li><strong>Connection or certificate errors</strong>: the client machine must reach the address and trust its HTTPS certificate.</li>
+            </ul>
+        </section>
+
         @if (_message is not null)
         {
             <p role="status">@_message</p>
@@ -68,7 +239,51 @@
     private bool _busy;
     private string? _error;
     private string? _message;
-    private string Endpoint => new Uri(new Uri(Navigation.BaseUri), "api/Plugins/Mcp").AbsoluteUri;
+    private string? _copiedLabel;
+    private string? _baseAddress;
+    private string? _addressError;
+    private string _endpoint = "";
+
+    private string DetectedEndpoint =>
+        McpClientConfiguration.TryCreateEndpoint(Navigation.BaseUri, out var endpoint, out _) ? endpoint : Navigation.BaseUri;
+
+    private string Endpoint => _endpoint;
+
+    protected override void OnInitialized()
+    {
+        _baseAddress = Navigation.BaseUri;
+        _endpoint = DetectedEndpoint;
+    }
+
+    private void SetBaseAddress(ChangeEventArgs args)
+    {
+        _baseAddress = args.Value?.ToString();
+        if (McpClientConfiguration.TryCreateEndpoint(_baseAddress, out var endpoint, out var error))
+        {
+            _endpoint = endpoint;
+            _addressError = null;
+        }
+        else
+        {
+            _endpoint = DetectedEndpoint;
+            _addressError = error;
+        }
+    }
+
+    private RenderFragment Snippet(string label, string text) => __builder =>
+    {
+        <figure class="mcp-snippet">
+            <figcaption>@label</figcaption>
+            <pre tabindex="0" aria-label="@label" style="white-space: pre-wrap; overflow-wrap: anywhere;"><code>@text</code></pre>
+            <Flex Gap="Gap.Small">
+                <Button Small OnClick="@(() => CopyAsync(text, label))" aria-label="@($"Copy {label}")">Copy</Button>
+                @if (_copiedLabel == label)
+                {
+                    <span aria-hidden="true">Copied.</span>
+                }
+            </Flex>
+        </figure>
+    };
 
     private async Task<IJSObjectReference> ModuleAsync() =>
         _module ??= await JS.InvokeAsync<IJSObjectReference>("import",
@@ -95,34 +310,27 @@
         }
     }
 
-    private Task CopyTokenAsync() => CopyAsync(_session!.AccessToken);
+    private Task CopyTokenAsync() => CopyAsync(_session!.AccessToken, "access token");
 
-    private Task CopyConfigurationAsync() => CopyAsync(JsonSerializer.Serialize(new
-    {
-        servers = new
-        {
-            lancommander = new
-            {
-                type = "http",
-                url = Endpoint,
-                headers = new Dictionary<string, string> { ["Authorization"] = $"Bearer {_session!.AccessToken}" }
-            }
-        }
-    }, new JsonSerializerOptions { WriteIndented = true }));
+    private Task CopyConfigurationAsync() => CopyAsync(
+        McpClientConfiguration.VsCodeConfigurationWithToken(Endpoint, _session!.AccessToken),
+        "VS Code configuration with token");
 
-    private async Task CopyAsync(string value)
+    private async Task CopyAsync(string value, string label)
     {
         _error = null;
         _message = null;
+        _copiedLabel = null;
         try
         {
             var module = await ModuleAsync();
             await module.InvokeVoidAsync("copy", value);
-            _message = "Copied to clipboard.";
+            _message = $"Copied {label} to clipboard.";
+            _copiedLabel = label;
         }
         catch (JSException)
         {
-            _error = "Could not access the clipboard. Use HTTPS and allow clipboard access, or select the token and copy it manually.";
+            _error = "Could not access the clipboard. Use HTTPS and allow clipboard access, or select the text and copy it manually.";
         }
     }
 
@@ -131,6 +339,7 @@
         _session = null;
         _error = null;
         _message = null;
+        _copiedLabel = null;
     }
 
     public async ValueTask DisposeAsync()

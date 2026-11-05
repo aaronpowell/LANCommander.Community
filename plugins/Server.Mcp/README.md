@@ -74,7 +74,7 @@ localhost; credentials are never forwarded to another host or across redirects.
 
 The password is cleared after the request. The access token is masked and held
 only in page memory, never local/session storage. The refresh token is discarded.
-Use **Copy access token** or **Copy MCP configuration**, then **Clear token**.
+Use **Copy access token** or **Copy VS Code configuration with token**, then **Clear token**.
 Clearing or leaving the page does not revoke the token. The copied configuration
 uses the VS Code MCP format and contains the secret: do not commit it.
 
@@ -84,8 +84,45 @@ one replaces that account's refresh token**, potentially preventing other client
 from refreshing. Use administrator credentials even if the page itself is already
 open as an administrator; LC's login endpoint authenticates the entered account.
 
-The endpoint is:
+### Client setup tabs
 
+The same page shows the MCP endpoint and copyable setup instructions in tabs for
+the **GitHub Copilot app**, **Claude Code**, **Codex** and a **General** tab
+(transport and auth requirements, plus a VS Code `mcp.json` example). Examples
+never contain a real token: they use the `YOUR_LANCOMMANDER_TOKEN` placeholder or
+the `LANCOMMANDER_TOKEN` environment variable. The page makes no network requests
+other than the existing explicit token generation and clipboard actions.
+
+The endpoint is derived from the address LANCommander serves the page at,
+including its scheme, host, port and path base (subpath), so it matches what the
+host itself considers its public address. The page does not read forwarded
+headers itself. If you opened it via `localhost` or another name clients cannot
+use, enter the public address (for example `https://example.com/lancommander/`)
+in **LANCommander address used by MCP clients**; it only changes the examples
+and is not saved. Local-only and plain HTTP addresses show warnings.
+
+Verified client notes (see official documentation linked from each tab):
+
+- **GitHub Copilot app** (desktop, not VS Code or Copilot CLI): GitHub documents
+  adding a custom server under **Customize > MCP** but not that form's fields, so
+  HTTP header support there is unverified. As an alternative, GitHub states that
+  servers configured for Copilot CLI are automatically available in the app;
+  the tab shows the documented CLI header setup (`~/.copilot/mcp-config.json`).
+  GitHub does not separately document how the app applies those headers, so
+  confirm the tools work in the app.
+  [App docs](https://docs.github.com/en/copilot/how-tos/github-copilot-app/customize-github-copilot-app#configuring-mcp-servers),
+  [CLI docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers).
+- **Claude Code**: `claude mcp add --transport http` with an `Authorization`
+  header, or a project `.mcp.json` using `${LANCOMMANDER_TOKEN}`.
+  [Docs](https://code.claude.com/docs/en/mcp).
+- **Codex** (CLI, IDE extension and ChatGPT desktop app share
+  `~/.codex/config.toml`): `bearer_token_env_var = "LANCOMMANDER_TOKEN"`, read
+  from the Codex process environment. The docs do not say which environment the
+  desktop app reads or describe a token field in its add-server form.
+  `codex mcp login` (OAuth) is not supported by this server.
+  [Docs](https://developers.openai.com/codex/mcp).
+
+The endpoint is:
 ```text
 https://your-lancommander-server/api/Plugins/Mcp
 ```
@@ -96,7 +133,7 @@ For clients using the VS Code MCP configuration format:
 {
   "inputs": [
     {
-      "id": "lc-token",
+      "id": "lancommander-token",
       "type": "promptString",
       "description": "LANCommander administrator bearer token",
       "password": true
@@ -107,7 +144,7 @@ For clients using the VS Code MCP configuration format:
       "type": "http",
       "url": "https://your-lancommander-server/api/Plugins/Mcp",
       "headers": {
-        "Authorization": "Bearer ${input:lc-token}"
+        "Authorization": "Bearer ${input:lancommander-token}"
       }
     }
   }

@@ -14,5 +14,6 @@ public sealed class McpNavigation : IServerNavigationExtension
     public string Label => "MCP";
     public string Href => "/Plugins/Mcp";
     public string Section => ServerNavigationSection.Integrations;
+    public string? Icon => "Plug";
     public PluginAccessPolicy Access => PluginAccessPolicy.Administrator;
 }

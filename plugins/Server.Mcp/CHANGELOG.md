@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- The MCP setup page now shows the endpoint derived from LANCommander's address
+  and path base (with an unsaved override), and tabbed, copyable client setup
+  for the GitHub Copilot app, Claude Code, Codex and general MCP clients using
+  token placeholders or environment variables. Not yet assigned a version.
+- The **Settings > Integrations > MCP** navigation entry now shows the `Plug`
+  icon.
+
 ## 0.2.1
 
 Unreleased monorepo migration build. Includes the existing MCP setup page and
