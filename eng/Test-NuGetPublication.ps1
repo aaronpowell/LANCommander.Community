@@ -148,7 +148,7 @@ try {
         $nugetJob -notmatch 'actions/download-artifact@' -or
         $nugetJob -match 'environment:|packages:\s+write|dotnet pack|Validate-Plugin\.ps1' -or
         $skipJob -notmatch 'NUGET_API_KEY repository secret is not configured') {
-        throw 'NuGet.org must be automatically selected only for eligible packages with a configured API key, or report its intentional skip.'
+        throw 'NuGet.org must be automatically selected only for eligible packages with a configured API key, or report its intentional skip; recovery uses the main publisher commit.'
     }
     Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
         -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `

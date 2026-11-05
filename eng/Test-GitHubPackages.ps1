@@ -106,9 +106,16 @@ function Assert-Fails {
 
 try {
     $workflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release-plugin.yml') -Raw
+    $buildJob = [regex]::Match($workflow, '(?ms)^  build:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
     $githubPackagesJob = [regex]::Match($workflow, '(?ms)^  publish-github-packages:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
     if ($workflow -notmatch 'workflow_call:' -or
-        $workflow -notmatch '(?ms)^permissions:\r?\n  contents:\s*read\r?\n  packages:\s*write' -or
+        $workflow -notmatch '(?ms)^permissions:\r?\n  actions:\s*read\r?\n  contents:\s*read\r?\n  packages:\s*write' -or
+        $buildJob -notmatch '(?ms)^\s+permissions:\r?\n\s+actions:\s*read\r?\n\s+contents:\s*read' -or
+        $buildJob -notmatch "if:\s+inputs\.artifact_run_id != ''" -or
+        $buildJob -notmatch 'github-token:\s+\$\{\{\s*github\.token\s*\}\}' -or
+        $buildJob -notmatch 'run-id:\s+\$\{\{\s*inputs\.artifact_run_id\s*\}\}' -or
+        $buildJob -notmatch 'inputs\.artifact_run_attempt' -or
+        $buildJob -notmatch 'Publish-Release\.ps1.*-PlanOnly' -or
         $githubPackagesJob -notmatch "if:\s+needs\.build\.outputs\.github_packages_eligible == 'true'" -or
         $githubPackagesJob -notmatch "ref:\s*\$\{\{\s*github\.event_name == 'workflow_dispatch' && github\.sha \|\| inputs\.tag\s*\}\}" -or
         $githubPackagesJob -notmatch 'packages:\s+write' -or
@@ -122,11 +129,15 @@ try {
         throw 'The separate manual GitHub Packages workflow must not remain.'
     }
     $releaseWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release.yml') -Raw
-    if ($releaseWorkflow -notmatch 'packages:\s+write' -or
+    if ($releaseWorkflow -notmatch 'actions:\s+read' -or
+        $releaseWorkflow -notmatch 'packages:\s+write' -or
         $releaseWorkflow -notmatch 'workflow_dispatch:' -or
         $releaseWorkflow -notmatch "RUN_REF -cne 'refs/heads/main'" -or
+        $releaseWorkflow -notmatch 'artifact_run_id:' -or
+        $releaseWorkflow -notmatch 'artifact_run_attempt:' -or
+        $releaseWorkflow -notmatch 'artifact_run_id:\s+\$\{\{\s*needs\.plan\.outputs\.artifact_run_id\s*\}\}' -or
         $releaseWorkflow -notmatch 'nuget_api_key:\s+\$\{\{\s*secrets\.NUGET_API_KEY\s*\}\}') {
-        throw 'Component releases must provide scoped caller permissions, optional NuGet.org secret forwarding, and main-only recovery dispatch.'
+        throw 'Component releases must provide scoped caller permissions, optional NuGet.org secret forwarding, and exact-artifact main-only recovery dispatch.'
     }
 
     Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `

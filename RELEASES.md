@@ -116,12 +116,25 @@ build, release, and feed jobs. Do not move or recreate the tag. For example:
 gh workflow run release.yml --repo aaronpowell/LANCommander.Community --ref main -f tag=server-mcp-v0.2.1
 ```
 
-Use the exact tag from the failed run, and follow the new run through all
-destinations. This recovery path does not bypass the component selector,
-immutable release checks, or feed retry checks. The feed jobs use the exact
-workflow commit on `main` for publisher tooling, while the package artifact is
-still built from the immutable selected tag and checked against the existing
-GitHub Release asset.
+For a run that successfully built the package but failed later, pass that run's
+ID and attempt to reuse the original checked artifact instead of rebuilding.
+This matters when the GitHub Release already exists: changed rebuild bytes are
+rejected by immutable release checks. Example:
+
+```powershell
+gh workflow run release.yml --repo aaronpowell/LANCommander.Community --ref main `
+  -f tag=server-mcp-v0.2.1 -f artifact_run_id=<original-run-id> -f artifact_run_attempt=1
+```
+
+For a startup failure before any artifact was built, omit `artifact_run_id`;
+the recovery dispatch will build from the exact selected tag. Follow the new
+run through every destination. Recovery validates the source artifact's
+component, package metadata, manifest, and checksum, then compares it to any
+existing GitHub Release asset before continuing. Feed jobs use the exact
+workflow commit on `main` for publisher tooling, while the package artifact
+remains bound to the immutable selected tag. If the original artifact has
+expired, do not assume a rebuild is byte-identical; stop rather than replacing
+published bytes.
 
 Do not invoke `eng/Publish-Release.ps1` manually as a shortcut around review
 or workflow checks. The workflow builds and validates the selected component
@@ -129,7 +142,10 @@ once, uploads the resulting bytes as an Actions artifact, and promotes those
 same checked bytes to the GitHub Release and eligible NuGet feeds. The
 artifact is named for the component, workflow run, and attempt; its name is
 passed as a build-job output so a retry of failed downstream jobs downloads
-the original build artifact. It is retained for seven days.
+the original build artifact. It is retained for seven days. The main-only
+recovery dispatch can retrieve that exact artifact by source run ID and
+attempt, validate it, and re-upload those same files under the recovery run;
+it does not rebuild in that mode.
 
 The GitHub Release publish job creates a draft, attaches the component asset,
 its `.sha256` sidecar, and `release-manifest.json`, then checks their hashes
