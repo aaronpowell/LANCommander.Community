@@ -25,7 +25,8 @@
     <ProjectReference Include="..\LANCommander.Community.Launcher.MQTT.Transport\LANCommander.Community.Launcher.MQTT.Transport.csproj" />
     <None Include="..\..\README.md" Pack="true" PackagePath="\" />
     <None Include="..\..\examples\MQTTnet-LICENSE.txt" Pack="true" PackagePath="\" />
-    <None Include="..\..\examples\TEST-GUIDE.md;..\..\examples\home-assistant-launch-game.yaml" Pack="true" PackagePath="examples\" />
+    <None Include="..\..\examples\TEST-GUIDE.md" Pack="true" PackagePath="examples/TEST-GUIDE.md" />
+    <None Include="..\..\examples\home-assistant-launch-game.yaml" Pack="true" PackagePath="examples/home-assistant-launch-game.yaml" />
   </ItemGroup>
   <ItemGroup Condition="'$(LANCommanderSourceRoot)' != ''">
     <ProjectReference Include="$(LANCommanderSourceRoot)\LANCommander.SDK\LANCommander.SDK.csproj" Private="false" PrivateAssets="all" />
