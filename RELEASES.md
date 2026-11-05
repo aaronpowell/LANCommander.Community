@@ -118,7 +118,10 @@ gh workflow run release.yml --repo aaronpowell/LANCommander.Community --ref main
 
 Use the exact tag from the failed run, and follow the new run through all
 destinations. This recovery path does not bypass the component selector,
-immutable release checks, or feed retry checks.
+immutable release checks, or feed retry checks. The feed jobs use the exact
+workflow commit on `main` for publisher tooling, while the package artifact is
+still built from the immutable selected tag and checked against the existing
+GitHub Release asset.
 
 Do not invoke `eng/Publish-Release.ps1` manually as a shortcut around review
 or workflow checks. The workflow builds and validates the selected component

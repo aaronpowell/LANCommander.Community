@@ -143,6 +143,7 @@ try {
     $skipJob = [regex]::Match($releasePluginWorkflow, '(?ms)^  nuget-org-skipped:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
     if ($releasePluginWorkflow -notmatch "if:\s+needs\.build\.outputs\.nuget_org_eligible == 'true' && needs\.build\.outputs\.nuget_api_key_available == 'true'" -or
         $nugetJob -notmatch 'NUGET_API_KEY:\s+\$\{\{\s*secrets\.nuget_api_key\s*\}\}' -or
+        $nugetJob -notmatch "ref:\s*\$\{\{\s*github\.event_name == 'workflow_dispatch' && github\.sha \|\| inputs\.tag\s*\}\}" -or
         $nugetJob -notmatch 'Publish-NuGetPackage\.ps1.*-Publish' -or
         $nugetJob -notmatch 'actions/download-artifact@' -or
         $nugetJob -match 'environment:|packages:\s+write|dotnet pack|Validate-Plugin\.ps1' -or
@@ -157,6 +158,17 @@ try {
             -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
             -EventName 'workflow_dispatch' -Ref 'refs/heads/feature'
     } 'main-branch recovery dispatch' 'Non-main NuGet recovery dispatch'
+    Assert-ReleaseSourceCheckout -Tag 'server-mcp-v0.2.1' -TagCommit 'abc' -HeadCommit 'abc' `
+        -WorkflowCommit 'abc' -EventName 'push' -Ref 'refs/tags/server-mcp-v0.2.1' `
+        -TagIsAncestorOfMain $true
+    Assert-ReleaseSourceCheckout -Tag 'server-mcp-v0.2.1' -TagCommit 'abc' -HeadCommit 'def' `
+        -WorkflowCommit 'def' -EventName 'workflow_dispatch' -Ref 'refs/heads/main' `
+        -TagIsAncestorOfMain $true
+    Assert-Fails {
+        Assert-ReleaseSourceCheckout -Tag 'server-mcp-v0.2.1' -TagCommit 'abc' -HeadCommit 'def' `
+            -WorkflowCommit 'def' -EventName 'workflow_dispatch' -Ref 'refs/heads/main' `
+            -TagIsAncestorOfMain $false
+    } 'tag reachable from main' 'Unreviewed source tag recovery'
     if (Test-Path -LiteralPath (Join-Path $repositoryRoot '.github/workflows/publish-nuget.yml')) {
         throw 'The separate manual NuGet.org workflow must not remain.'
     }

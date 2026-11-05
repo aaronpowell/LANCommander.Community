@@ -66,6 +66,26 @@ function Assert-ReleaseWorkflowContext {
     }
 }
 
+function Assert-ReleaseSourceCheckout {
+    param(
+        [Parameter(Mandatory)][string] $Tag,
+        [Parameter(Mandatory)][string] $TagCommit,
+        [Parameter(Mandatory)][string] $HeadCommit,
+        [Parameter(Mandatory)][string] $WorkflowCommit,
+        [Parameter(Mandatory)][string] $EventName,
+        [Parameter(Mandatory)][string] $Ref,
+        [Parameter(Mandatory)][bool] $TagIsAncestorOfMain
+    )
+
+    $tagCheckout = $EventName -ceq 'push' -and $Ref -ceq "refs/tags/$Tag" -and
+        $HeadCommit -ceq $TagCommit -and $WorkflowCommit -ceq $TagCommit
+    $mainRecoveryCheckout = $EventName -ceq 'workflow_dispatch' -and
+        $Ref -ceq 'refs/heads/main' -and $HeadCommit -ceq $WorkflowCommit
+    if (-not $TagIsAncestorOfMain -or (-not $tagCheckout -and -not $mainRecoveryCheckout)) {
+        throw 'Publisher checkout must be the exact release tag or the main-branch recovery workflow commit, with the tag reachable from main.'
+    }
+}
+
 function Resolve-PluginSelection {
     [CmdletBinding()]
     param(
@@ -119,4 +139,4 @@ function Resolve-PluginSelection {
     return @($selected.ToArray())
 }
 
-Export-ModuleMember -Function Assert-ReleaseWorkflowContext, Get-PluginRegistry, Get-PluginVersion, Resolve-PluginSelection, Test-PluginSemVer
+Export-ModuleMember -Function Assert-ReleaseSourceCheckout, Assert-ReleaseWorkflowContext, Get-PluginRegistry, Get-PluginVersion, Resolve-PluginSelection, Test-PluginSemVer
