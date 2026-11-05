@@ -106,6 +106,20 @@ runtime exclusions and loader-identity checks.
    selects only the component named by the tag. A component tag cannot select
    or publish another plugin.
 
+If a tag-triggered run fails before any jobs start, inspect its run details and
+confirm no release or feed publication occurred. The same workflow has a
+main-only recovery dispatch for that already-pushed tag; it validates the
+existing tag, component version, and `main` ancestry and then uses the normal
+build, release, and feed jobs. Do not move or recreate the tag. For example:
+
+```powershell
+gh workflow run release.yml --repo aaronpowell/LANCommander.Community --ref main -f tag=server-mcp-v0.2.1
+```
+
+Use the exact tag from the failed run, and follow the new run through all
+destinations. This recovery path does not bypass the component selector,
+immutable release checks, or feed retry checks.
+
 Do not invoke `eng/Publish-Release.ps1` manually as a shortcut around review
 or workflow checks. The workflow builds and validates the selected component
 once, uploads the resulting bytes as an Actions artifact, and promotes those
@@ -153,11 +167,13 @@ otherwise supplied only to the NuGet.org publisher step. No separate
 environment or reviewer gate is required by this automatic release design.
 
 GitHub Packages uses the repository-linked `GITHUB_TOKEN` and requires no PAT
-or extra secret. `packages: write` is granted to the three eligible server
-release callers and scoped to the GitHub Packages job, which also has
-`contents: read`; Launcher.MQTT receives no package-write permission. The
-NuGet.org publisher has `contents: read` and receives the optional API key
-only for its push step. The GitHub Release job has `contents: write`.
+or extra secret. The reusable release workflow declares `packages: write` as a
+maximum; callers pass that ceiling, while each job narrows its own token. Only
+the eligible server GitHub Packages publisher job has `packages: write` (and
+`contents: read`). Launcher.MQTT's feed job is skipped, and its build/release
+jobs do not receive package-write access. The NuGet.org publisher has
+`contents: read` and receives the optional API key only for its push step. The
+GitHub Release job has `contents: write`.
 `RepositoryUrl` in the server packages points to
 `https://github.com/aaronpowell/LANCommander.Community`, linking packages to
 the repository. After a first authorized GitHub Packages publication,
@@ -268,15 +284,15 @@ intentional compatibility change.
 
 ## Permissions and compatibility boundaries
 
-The tag-triggered release has `contents: write` for publishing the GitHub
-Release. Only eligible server release jobs receive `packages: write`, and
-that permission is scoped to the GitHub Packages publisher job. NuGet.org
-uses the optional repository secret without an environment gate; the secret
-is not available to the build or test steps. A maintainer needs permission to
-merge reviewed source to `main`, push the release tag, manage repository
-secrets, and change package visibility/access settings. Do not grant broader
-permissions or perform a remote tag/release action without explicit
-authorization.
+The release workflow has `contents: write` for publishing the GitHub Release.
+The reusable workflow's `packages: write` maximum is narrowed by each job;
+only eligible server GitHub Packages publisher jobs receive that permission.
+NuGet.org uses the optional repository secret without an environment gate;
+the secret is not available to the build or test steps. A maintainer needs
+permission to merge reviewed source to `main`, push the release tag, manage
+repository secrets, and change package visibility/access settings. Do not
+grant broader permissions or perform a remote tag/release action without
+explicit authorization.
 
 Project paths, package IDs, owned assembly names, and C# namespaces use the
 `LANCommander.Community` hierarchy and exact `LANCommander` casing. Persistent

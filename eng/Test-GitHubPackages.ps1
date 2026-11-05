@@ -108,6 +108,7 @@ try {
     $workflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release-plugin.yml') -Raw
     $githubPackagesJob = [regex]::Match($workflow, '(?ms)^  publish-github-packages:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
     if ($workflow -notmatch 'workflow_call:' -or
+        $workflow -notmatch '(?ms)^permissions:\r?\n  contents:\s*read\r?\n  packages:\s*write' -or
         $githubPackagesJob -notmatch "if:\s+needs\.build\.outputs\.github_packages_eligible == 'true'" -or
         $githubPackagesJob -notmatch 'packages:\s+write' -or
         $githubPackagesJob -notmatch 'GITHUB_TOKEN:\s+\$\{\{\s*github\.token\s*\}\}' -or
@@ -121,9 +122,23 @@ try {
     }
     $releaseWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release.yml') -Raw
     if ($releaseWorkflow -notmatch 'packages:\s+write' -or
+        $releaseWorkflow -notmatch 'workflow_dispatch:' -or
+        $releaseWorkflow -notmatch "RUN_REF -cne 'refs/heads/main'" -or
         $releaseWorkflow -notmatch 'nuget_api_key:\s+\$\{\{\s*secrets\.NUGET_API_KEY\s*\}\}') {
-        throw 'The tag-triggered reusable release must provide minimum caller permissions and optional NuGet.org secret forwarding.'
+        throw 'Component releases must provide scoped caller permissions, optional NuGet.org secret forwarding, and main-only recovery dispatch.'
     }
+
+    Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+        -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
+        -EventName 'push' -Ref 'refs/tags/server-mcp-v0.2.1'
+    Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+        -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
+        -EventName 'workflow_dispatch' -Ref 'refs/heads/main'
+    Assert-Fails {
+        Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+            -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
+            -EventName 'workflow_dispatch' -Ref 'refs/heads/feature'
+    } 'main-branch recovery dispatch' 'Non-main recovery dispatch'
 
     $artifactDirectory = Join-Path $testRoot 'artifact'
     New-Item -ItemType Directory -Path $artifactDirectory | Out-Null

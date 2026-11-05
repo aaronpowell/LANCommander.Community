@@ -116,11 +116,9 @@ if ($PlanOnly) {
 if ([string]::IsNullOrWhiteSpace($env:NUGET_API_KEY)) {
     throw 'NuGet publication was explicitly requested, but NUGET_API_KEY is missing.'
 }
-if ($env:GITHUB_ACTIONS -cne 'true' -or
-    $env:GITHUB_REF -cne "refs/tags/$Tag" -or
-    $env:GITHUB_REPOSITORY -cne 'aaronpowell/LANCommander.Community') {
-    throw 'NuGet publication must run through the protected GitHub Actions workflow.'
-}
+Assert-ReleaseWorkflowContext -Tag $Tag -Repository $env:GITHUB_REPOSITORY `
+    -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions $env:GITHUB_ACTIONS `
+    -EventName $env:GITHUB_EVENT_NAME -Ref $env:GITHUB_REF
 
 $headCommit = (& git -C $repositoryRoot rev-parse HEAD).Trim()
 $tagCommit = (& git -C $repositoryRoot rev-parse "$Tag^{commit}").Trim()
