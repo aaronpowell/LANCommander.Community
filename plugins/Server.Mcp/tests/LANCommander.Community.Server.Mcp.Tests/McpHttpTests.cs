@@ -259,6 +259,9 @@ public sealed class McpHttpTests : IAsyncLifetime
         Assert.Equal("/Plugins/Mcp", navigation.Href);
         Assert.Equal(ServerNavigationSection.Integrations, navigation.Section);
         Assert.Equal(PluginAccessPolicy.Administrator, navigation.Access);
+        // The host resolves plugin icons with a case-insensitive IconType parse; unknown names render no icon.
+        Assert.True(Enum.TryParse<LANCommander.Server.UI.Controls.IconType>(navigation.Icon, true, out var icon));
+        Assert.Equal(LANCommander.Server.UI.Controls.IconType.Plug, icon);
         Assert.Equal(typeof(McpPlugin).Assembly, new McpPages().Assembly);
         var route = Assert.Single(typeof(McpSetup).GetCustomAttributes(typeof(Microsoft.AspNetCore.Components.RouteAttribute), false)
             .Cast<Microsoft.AspNetCore.Components.RouteAttribute>());
