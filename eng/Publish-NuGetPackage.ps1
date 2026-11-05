@@ -122,9 +122,18 @@ Assert-ReleaseWorkflowContext -Tag $Tag -Repository $env:GITHUB_REPOSITORY `
 
 $headCommit = (& git -C $repositoryRoot rev-parse HEAD).Trim()
 $tagCommit = (& git -C $repositoryRoot rev-parse "$Tag^{commit}").Trim()
-if ($LASTEXITCODE -ne 0 -or $headCommit -cne $tagCommit -or $manifest.sourceCommit -cne $tagCommit) {
-    throw 'NuGet publication checkout and manifest must match the exact release tag commit.'
+if ($LASTEXITCODE -ne 0) { throw 'NuGet publication tag does not resolve to a commit.' }
+if ($manifest.sourceCommit -cne $tagCommit) {
+    throw 'NuGet publication manifest must match the exact release tag commit.'
 }
+
+$fetchOutput = & git -C $repositoryRoot fetch origin main 2>&1
+if ($LASTEXITCODE -ne 0) { throw "Could not fetch the reviewed main branch: $($fetchOutput -join "`n")" }
+& git -C $repositoryRoot merge-base --is-ancestor $tagCommit origin/main
+$tagIsAncestorOfMain = $LASTEXITCODE -eq 0
+Assert-ReleaseSourceCheckout -Tag $Tag -TagCommit $tagCommit -HeadCommit $headCommit `
+    -WorkflowCommit $env:GITHUB_SHA -EventName $env:GITHUB_EVENT_NAME -Ref $env:GITHUB_REF `
+    -TagIsAncestorOfMain $tagIsAncestorOfMain
 
 $packageId = $component.packageId.ToLowerInvariant()
 $packageVersion = $selection.version.ToLowerInvariant()

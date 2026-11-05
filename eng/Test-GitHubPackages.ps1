@@ -110,6 +110,7 @@ try {
     if ($workflow -notmatch 'workflow_call:' -or
         $workflow -notmatch '(?ms)^permissions:\r?\n  contents:\s*read\r?\n  packages:\s*write' -or
         $githubPackagesJob -notmatch "if:\s+needs\.build\.outputs\.github_packages_eligible == 'true'" -or
+        $githubPackagesJob -notmatch "ref:\s*\$\{\{\s*github\.event_name == 'workflow_dispatch' && github\.sha \|\| inputs\.tag\s*\}\}" -or
         $githubPackagesJob -notmatch 'packages:\s+write' -or
         $githubPackagesJob -notmatch 'GITHUB_TOKEN:\s+\$\{\{\s*github\.token\s*\}\}' -or
         $githubPackagesJob -notmatch 'Publish-GitHubPackage\.ps1.*-Publish' -or
