@@ -38,11 +38,13 @@ and retry guarantees. Do not copy its changing component table here.
    that a ZIP is a NuGet-installable package.
 7. On failure, inspect the run and state at every destination before retrying.
    Rerun failed downstream jobs for the same tag to promote the original
-   checked build artifact. GitHub Packages compares every package entry;
-   NuGet.org retry verifies its repository signature before comparing all
-   non-signature payload entries. Mismatches fail closed. Never reuse a
-   version, force-move a tag, overwrite a package, or use `--skip-duplicate`
-   to suppress a conflict.
+   checked build artifact. For a new main-only recovery dispatch after a build
+   succeeded, pass its run ID and attempt so the workflow reuses exact bytes;
+   omit them only when the failed run never produced an artifact. GitHub
+   Packages compares every package entry; NuGet.org retry verifies its
+   repository signature before comparing all non-signature payload entries.
+   Mismatches fail closed. Never reuse a version, force-move a tag, overwrite
+   a package, or use `--skip-duplicate` to suppress a conflict.
    If a tag run fails before jobs start, inspect its details; when no release
    or package was created, use the canonical main-only recovery dispatch in
    `RELEASES.md` with the exact existing tag. Do not recreate or move the tag.
