@@ -25,6 +25,9 @@ if ($Plugin -eq 'Launcher.MQTT') {
 }
 
 foreach ($testProject in $testProjects) {
+    if ($Plugin -eq 'Launcher.MQTT' -and $testProject -match 'HostLoader\.Tests') {
+        continue # The host tests run against the extracted nupkg after packaging.
+    }
     & dotnet test $testProject -c Release --nologo
     if ($LASTEXITCODE -ne 0) { throw "Tests failed for ${Plugin}: $testProject" }
 }
@@ -45,6 +48,29 @@ if (Test-Path -LiteralPath $packageOutput) {
 if ($LASTEXITCODE -ne 0) { throw "Package validation failed for $Plugin." }
 
 if ($Plugin -eq 'Launcher.MQTT') {
+    Import-Module (Join-Path $PSScriptRoot 'PluginRelease.psm1') -Force
+    $version = Get-PluginVersion $component
+    foreach ($publisher in @('Publish-GitHubPackage.ps1', 'Publish-NuGetPackage.ps1')) {
+        $arguments = @{
+            Plugin = $Plugin
+            Tag = "launcher-mqtt-v$version"
+            ArtifactDirectory = $packageOutput
+            Publish = $true
+            PlanOnly = $true
+        }
+        if ($publisher -eq 'Publish-GitHubPackage.ps1') {
+            $arguments.Owner = 'aaronpowell'
+            $arguments.Repository = 'aaronpowell/LANCommander.Community'
+        }
+        $output = & (Join-Path $PSScriptRoot $publisher) @arguments
+        $plans = @($output | Where-Object { $_ -match '^\{"component"' })
+        if ($plans.Count -ne 1) { throw "$publisher did not return exactly one publication plan." }
+        $plan = $plans[0] | ConvertFrom-Json
+        if ($plan.component -cne $Plugin -or $plan.version -cne $version -or
+            $plan.packageId -cne $component.packageId -or $plan.publishRequested -ne $true) {
+            throw "$publisher did not select the exact launcher NuGet artifact."
+        }
+    }
     if (-not (Test-Path -LiteralPath $env:LANCOMMANDER_HA_TEMPLATE_EXPORT)) {
         throw 'Launcher host-loader tests did not export the packaged discovery templates.'
     }

@@ -122,7 +122,30 @@ public sealed class PluginSettingsTests
             Assert.NotNull(runtime.Host);
             Assert.Contains(invalid ? "Configuration could not start" : "Configure the broker", runtime.Status);
             if (invalid)
-                Assert.Equal("""{"Favorites": null}""", await File.ReadAllTextAsync(Path.Combine(directory, "homeassistant.json")));
+                Assert.Equal("""{"Favorites": null}""", await File.ReadAllTextAsync(Path.Combine(directory, "Data", "homeassistant.json")));
+        }
+        finally { Directory.Delete(directory, recursive: true); }
+    }
+
+    [Fact]
+    public void Legacy_settings_and_journal_move_to_preserved_data_without_overwriting_conflicts()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), $"lc-ha-data-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        try
+        {
+            File.WriteAllText(Path.Combine(directory, "homeassistant.json"), "original settings");
+            File.WriteAllText(Path.Combine(directory, "discovery-topics.json"), "original journal");
+            var data = HomeAssistantPluginSettings.PrepareDataDirectory(directory);
+            Assert.Equal(Path.Combine(directory, "Data"), data);
+            Assert.Equal("original settings", File.ReadAllText(Path.Combine(data, "homeassistant.json")));
+            Assert.Equal("original journal", File.ReadAllText(Path.Combine(data, "discovery-topics.json")));
+            Assert.False(File.Exists(Path.Combine(directory, "homeassistant.json")));
+            Assert.Equal(data, HomeAssistantPluginSettings.PrepareDataDirectory(directory));
+            File.WriteAllText(Path.Combine(directory, "homeassistant.json"), "conflicting settings");
+            Assert.Throws<IOException>(() => HomeAssistantPluginSettings.PrepareDataDirectory(directory));
+            Assert.Equal("original settings", File.ReadAllText(Path.Combine(data, "homeassistant.json")));
+            Assert.Equal("conflicting settings", File.ReadAllText(Path.Combine(directory, "homeassistant.json")));
         }
         finally { Directory.Delete(directory, recursive: true); }
     }

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using LANCommander.Community.Launcher.MQTT.Transport;
+using LANCommander.SDK.Plugins;
 
 namespace LANCommander.Community.Launcher.MQTT;
 
@@ -47,6 +48,23 @@ public sealed record HomeAssistantPluginSettings(
             throw new InvalidOperationException("BrokerUsername and BrokerPassword are required in homeassistant.json.");
 
         return new MqttCredentials(BrokerUsername, BrokerPassword);
+    }
+
+    public static string PrepareDataDirectory(string pluginDirectory)
+    {
+        var dataDirectory = Path.Combine(pluginDirectory, PluginManifest.DataFolderName);
+        Directory.CreateDirectory(dataDirectory);
+        foreach (var name in new[] { "homeassistant.json", "discovery-topics.json" })
+        {
+            var legacy = Path.Combine(pluginDirectory, name);
+            var destination = Path.Combine(dataDirectory, name);
+            if (!File.Exists(legacy))
+                continue;
+            if (File.Exists(destination))
+                throw new IOException($"Both legacy and Data copies of {name} exist. Back them up, reconcile them into Data, and remove the legacy copy before starting.");
+            File.Move(legacy, destination);
+        }
+        return dataDirectory;
     }
 
     public static async Task<HomeAssistantPluginSettings> LoadAsync(

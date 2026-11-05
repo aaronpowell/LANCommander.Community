@@ -6,7 +6,16 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <IsPackable>false</IsPackable>
+    <IsPackable>true</IsPackable>
+    <Description>Generic MQTT command and state integration for the LANCommander GUI Launcher, with Home Assistant discovery.</Description>
+    <RepositoryUrl>https://github.com/aaronpowell/LANCommander.Community</RepositoryUrl>
+    <PackageType>LANCommander.Plugin;LANCommander.Plugin.Launcher</PackageType>
+    <PackageTags>LANCommander;plugin;launcher;mqtt;homeassistant</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackLauncherPayload</TargetsForTfmSpecificContentInPackage>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <LANCommanderSourceRoot Condition="'$(LANCommanderSourceRoot)' == ''">$(LANCOMMANDER_SOURCE_ROOT)</LANCommanderSourceRoot>
   </PropertyGroup>
@@ -14,6 +23,9 @@
     <PackageReference Include="Avalonia" PrivateAssets="all" />
     <ProjectReference Include="..\LANCommander.Community.Launcher.MQTT.Core\LANCommander.Community.Launcher.MQTT.Core.csproj" />
     <ProjectReference Include="..\LANCommander.Community.Launcher.MQTT.Transport\LANCommander.Community.Launcher.MQTT.Transport.csproj" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\examples\MQTTnet-LICENSE.txt" Pack="true" PackagePath="\" />
+    <None Include="..\..\examples\TEST-GUIDE.md;..\..\examples\home-assistant-launch-game.yaml" Pack="true" PackagePath="examples\" />
   </ItemGroup>
   <ItemGroup Condition="'$(LANCommanderSourceRoot)' != ''">
     <ProjectReference Include="$(LANCommanderSourceRoot)\LANCommander.SDK\LANCommander.SDK.csproj" Private="false" PrivateAssets="all" />
@@ -36,7 +48,7 @@
       <PluginPackageDirectory>$(TargetDir)plugin-package\</PluginPackageDirectory>
     </PropertyGroup>
     <ItemGroup>
-      <StalePluginPackageFiles Include="$(PluginPackageDirectory)*.dll;$(PluginPackageDirectory)*.deps.json" />
+      <StalePluginPackageFiles Include="$(PluginPackageDirectory)*.dll;$(PluginPackageDirectory)*.deps.json;$(PluginPackageDirectory)homeassistant.json" />
     </ItemGroup>
     <Delete Files="@(StalePluginPackageFiles)" />
     <MakeDir Directories="$(PluginPackageDirectory)" />
@@ -46,7 +58,14 @@
       SkipUnchangedFiles="true" />
     <Copy
       SourceFiles="$(MSBuildProjectDirectory)\homeassistant.example.json"
-      DestinationFiles="$(PluginPackageDirectory)homeassistant.json"
+      DestinationFiles="$(PluginPackageDirectory)homeassistant.example.json"
       SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PackLauncherPayload">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(TargetDir)plugin-package\*.dll;$(TargetDir)plugin-package\*.deps.json;$(TargetDir)plugin-package\homeassistant.example.json">
+        <PackagePath>lib/$(TargetFramework)</PackagePath>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
   </Target>
 </Project>

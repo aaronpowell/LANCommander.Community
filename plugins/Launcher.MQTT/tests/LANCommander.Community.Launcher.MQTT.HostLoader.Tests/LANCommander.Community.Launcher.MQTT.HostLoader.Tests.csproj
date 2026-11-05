@@ -22,6 +22,7 @@
     <ProjectReference Include="$(LANCommanderSourceRoot)\LANCommander.Launcher.Plugins\LANCommander.Launcher.Plugins.csproj" />
     <ProjectReference Include="$(LANCommanderSourceRoot)\LANCommander.Launcher.Services\LANCommander.Launcher.Services.csproj" />
     <ProjectReference Include="$(LANCommanderSourceRoot)\LANCommander.Launcher.Models\LANCommander.Launcher.Models.csproj" />
+    <ProjectReference Include="$(LANCommanderSourceRoot)\LANCommander.PluginManagement\LANCommander.PluginManagement.csproj" />
     <ProjectReference Include="..\..\src\LANCommander.Community.Launcher.MQTT.Plugin\LANCommander.Community.Launcher.MQTT.Plugin.csproj" />
   </ItemGroup>
   <Target Name="RequireLANCommanderSourceRoot" BeforeTargets="PrepareForBuild" Condition="'$(LANCommanderSourceRoot)' == ''">

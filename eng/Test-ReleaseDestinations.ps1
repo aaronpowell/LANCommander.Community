@@ -15,6 +15,12 @@ function Assert-Fails {
 
 $releaseWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release-plugin.yml') -Raw
 $callerWorkflow = Get-Content -LiteralPath (Join-Path $repositoryRoot '.github/workflows/release.yml') -Raw
+$launcherJob = [regex]::Match($callerWorkflow, '(?ms)^  launcher-mqtt:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
+if ($launcherJob -notmatch 'packages:\s+write' -or
+    $launcherJob -notmatch 'nuget_api_key:\s+\$\{\{\s*secrets\.NUGET_API_KEY\s*\}\}' -or
+    $launcherJob -notmatch 'uses:\s+\./\.github/workflows/release-plugin\.yml') {
+    throw 'Launcher releases must use the shared workflow with package permissions and optional NuGet.org key forwarding.'
+}
 $nugetKeyJob = [regex]::Match($releaseWorkflow, '(?ms)^  nuget-key:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
 $buildJob = [regex]::Match($releaseWorkflow, '(?ms)^  build:\r?\n(?<body>.*?)(?=^  [A-Za-z0-9_-]+:|\z)').Groups['body'].Value
 if ($releaseWorkflow -notmatch 'workflow_call:' -or
@@ -70,10 +76,15 @@ if (-not $quakeWithKey.publishToGitHubPackages -or -not $quakeWithKey.publishToN
     throw 'Quake3 nupkg must remain eligible for both package feeds.'
 }
 $launcherWithKey = Get-ReleaseDestinationPlan -Plugin Launcher.MQTT -NuGetApiKeyAvailable $true
-if ($launcherWithKey.artifactFormat -cne 'zip' -or
-    $launcherWithKey.publishToGitHubPackages -or
-    $launcherWithKey.publishToNuGetOrg) {
-    throw 'Launcher ZIP releases must not select either NuGet feed, even when a NuGet.org key exists.'
+if ($launcherWithKey.artifactFormat -cne 'nupkg' -or
+    -not $launcherWithKey.publishToGitHubPackages -or
+    -not $launcherWithKey.publishToNuGetOrg) {
+    throw 'Launcher NuGet releases with a key must select both feeds.'
+}
+$launcherWithoutKey = Get-ReleaseDestinationPlan -Plugin Launcher.MQTT -NuGetApiKeyAvailable $false
+if (-not $launcherWithoutKey.publishToGitHubPackages -or $launcherWithoutKey.publishToNuGetOrg -or
+    $launcherWithoutKey.nugetOrgSkipReason -notmatch 'intentionally skipped') {
+    throw 'Launcher releases without a key must select GitHub Packages and report the NuGet.org skip.'
 }
 Assert-Fails {
     Get-ReleaseDestinationPlan -Plugin Server.Unknown -NuGetApiKeyAvailable $true
