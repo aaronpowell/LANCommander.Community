@@ -156,22 +156,7 @@ try {
 
     $configPath = Join-Path ([IO.Path]::GetTempPath()) "github-nuget-$([Guid]::NewGuid().ToString('N')).config"
     $temporaryFiles.Add($configPath)
-    $configuration = [System.Xml.Linq.XDocument]::new(
-        [System.Xml.Linq.XElement]::new('configuration',
-            [System.Xml.Linq.XElement]::new('packageSources',
-                [System.Xml.Linq.XElement]::new('clear'),
-                [System.Xml.Linq.XElement]::new('add',
-                    [System.Xml.Linq.XAttribute]::new('key', 'github'),
-                    [System.Xml.Linq.XAttribute]::new('value', $feedUrl))),
-            [System.Xml.Linq.XElement]::new('packageSourceCredentials',
-                [System.Xml.Linq.XElement]::new('github',
-                    [System.Xml.Linq.XElement]::new('add',
-                        [System.Xml.Linq.XAttribute]::new('key', 'Username'),
-                        [System.Xml.Linq.XAttribute]::new('value', $Owner)),
-                    [System.Xml.Linq.XElement]::new('add',
-                        [System.Xml.Linq.XAttribute]::new('key', 'ClearTextPassword'),
-                        [System.Xml.Linq.XAttribute]::new('value', $env:GITHUB_TOKEN))))))
-    $configuration.Save($configPath)
+    New-GitHubNuGetConfigFile -Owner $Owner -Token $env:GITHUB_TOKEN -FeedUrl $feedUrl -Path $configPath | Out-Null
     $pushOutput = & dotnet nuget push $packagePath --source github --configfile $configPath --no-symbols --force-english-output 2>&1
     $pushExitCode = $LASTEXITCODE
     $pushMessage = ($pushOutput -join "`n")

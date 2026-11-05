@@ -67,4 +67,43 @@ function Get-GitHubNuGetPackageBaseAddress {
     return $baseAddress.AbsoluteUri.TrimEnd('/')
 }
 
-Export-ModuleMember -Function Compare-GitHubNuGetPackagePayload, Get-GitHubNuGetPackageBaseAddress
+function New-GitHubNuGetConfigFile {
+    param(
+        [Parameter(Mandatory)][string] $Owner,
+        [Parameter(Mandatory)][string] $Token,
+        [Parameter(Mandatory)][string] $FeedUrl,
+        [Parameter(Mandatory)][string] $Path
+    )
+
+    $document = [System.Xml.XmlDocument]::new()
+    $document.AppendChild($document.CreateXmlDeclaration('1.0', 'utf-8', $null)) | Out-Null
+    $configuration = $document.CreateElement('configuration')
+    $document.AppendChild($configuration) | Out-Null
+
+    $sources = $document.CreateElement('packageSources')
+    $configuration.AppendChild($sources) | Out-Null
+    $sources.AppendChild($document.CreateElement('clear')) | Out-Null
+    $source = $document.CreateElement('add')
+    $source.SetAttribute('key', 'github')
+    $source.SetAttribute('value', $FeedUrl)
+    $sources.AppendChild($source) | Out-Null
+
+    $credentials = $document.CreateElement('packageSourceCredentials')
+    $configuration.AppendChild($credentials) | Out-Null
+    $github = $document.CreateElement('github')
+    $credentials.AppendChild($github) | Out-Null
+    foreach ($credential in @(
+        @{ key = 'Username'; value = $Owner },
+        @{ key = 'ClearTextPassword'; value = $Token }
+    )) {
+        $entry = $document.CreateElement('add')
+        $entry.SetAttribute('key', $credential.key)
+        $entry.SetAttribute('value', $credential.value)
+        $github.AppendChild($entry) | Out-Null
+    }
+
+    $document.Save($Path)
+    return $Path
+}
+
+Export-ModuleMember -Function Compare-GitHubNuGetPackagePayload, Get-GitHubNuGetPackageBaseAddress, New-GitHubNuGetConfigFile
