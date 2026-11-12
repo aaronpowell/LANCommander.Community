@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 [assembly: LANCommanderPlugin(typeof(McpPlugin), Id = McpPlugin.PluginId,
-    MinHostVersion = "2.2.0-beta.3", Hosts = PluginHost.Server)]
+    MinHostVersion = "2.2.0-beta.4", Hosts = PluginHost.Server)]
 
 namespace LANCommander.Community.Server.Mcp;
 

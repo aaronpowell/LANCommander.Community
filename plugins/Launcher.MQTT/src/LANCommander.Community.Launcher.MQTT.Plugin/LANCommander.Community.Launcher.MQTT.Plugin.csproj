@@ -39,7 +39,7 @@
     <ProjectReference Include="$(LANCommanderSourceRoot)\LANCommander.Packaging.Abstractions\LANCommander.Packaging.Abstractions.csproj" Private="false" PrivateAssets="all" />
   </ItemGroup>
   <Target Name="RequireLANCommanderSourceRoot" BeforeTargets="PrepareForBuild" Condition="'$(LANCommanderSourceRoot)' == ''">
-    <Error Text="Set LANCommanderSourceRoot (or LANCOMMANDER_SOURCE_ROOT) to a LANCommander v2.2.0-beta.3 source checkout to compile the host adapter." />
+    <Error Text="Set LANCommanderSourceRoot (or LANCOMMANDER_SOURCE_ROOT) to a LANCommander v2.2.0-beta.4 source checkout to compile the host adapter." />
   </Target>
   <Target Name="RemoveHostProvidedInterposerRuntime" AfterTargets="Build">
     <Delete Files="$(TargetDir)LANCommander.Interposer.dll;$(TargetDir)x64\LANCommander.Interposer.dll;$(TargetDir)x64\LANCommander.Interposer.Injector.exe;$(TargetDir)x86\LANCommander.Interposer.dll;$(TargetDir)x86\LANCommander.Interposer.Injector.exe" />

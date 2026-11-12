@@ -2,11 +2,13 @@
 
 ## 0.2.1
 
-Unreleased: package the launcher as `LANCommander.Community.Launcher.MQTT.Plugin`
+Package the launcher as `LANCommander.Community.Launcher.MQTT.Plugin`
 NuGet with `LANCommander.Plugin` and `LANCommander.Plugin.Launcher` types.
 Build and validate the private payload once, then use the same release artifact
 for GitHub Packages and optional NuGet.org publication. Retain the verified
-LANCommander beta.3 source pin and exact host compatibility range.
+LANCommander beta.4 source pin and exact host compatibility range. Launch only
+the single `ActionType.Primary` action, retaining the exactly-one-primary safety
+check.
 
 Store writable settings and the discovery journal in the host-preserved `Data`
 directory. Existing ZIP users must back up and move both files into `Data`

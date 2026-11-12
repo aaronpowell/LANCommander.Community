@@ -35,7 +35,7 @@ and retry guarantees. Do not copy its changing component table here.
    authorization.
 6. Launcher.MQTT now builds a real NuGet payload, declares the launcher-specific
    package type, and uses the same feed jobs as server plugins. Preserve its
-   pinned beta.3 host contracts, private-dependency inventory and extracted
+   pinned beta.4 host contracts, private-dependency inventory and extracted
    package install/loader tests. Follow its README's existing-ZIP upgrade
    preparation: the host updater preserves only `Data`, not root settings or
    discovery journals. Never replace the published 0.2.0 ZIP/tag.

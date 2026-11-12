@@ -8,6 +8,24 @@ namespace LANCommander.Community.Launcher.MQTT.HostLoader.Tests;
 
 public sealed class PluginSettingsTests
 {
+    [Fact]
+    public void Launch_requires_exactly_one_primary_type_and_accepts_legacy_manifest_flag()
+    {
+        var primary = new LANCommander.SDK.Models.Manifest.Action { Type = LANCommander.SDK.Enums.ActionType.Primary };
+        var other = new[]
+        {
+            new LANCommander.SDK.Models.Manifest.Action { Type = LANCommander.SDK.Enums.ActionType.Secondary },
+            new LANCommander.SDK.Models.Manifest.Action { Type = LANCommander.SDK.Enums.ActionType.Config },
+            new LANCommander.SDK.Models.Manifest.Action { Type = LANCommander.SDK.Enums.ActionType.Join }
+        };
+        Assert.Same(primary, LANCommanderGameLaunchHost.RequirePrimaryAction(other.Append(primary)));
+        Assert.Throws<InvalidOperationException>(() => LANCommanderGameLaunchHost.RequirePrimaryAction(other));
+        var legacy = new LANCommander.SDK.Models.Manifest.Action { IsPrimaryAction = true };
+        Assert.Same(legacy, LANCommanderGameLaunchHost.RequirePrimaryAction([legacy]));
+        Assert.Throws<InvalidOperationException>(() =>
+            LANCommanderGameLaunchHost.RequirePrimaryAction([primary, legacy]));
+    }
+
     [Theory]
     [InlineData(null, false)]
     [InlineData(false, false)]

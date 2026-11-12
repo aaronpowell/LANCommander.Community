@@ -80,15 +80,13 @@ public sealed class LANCommanderGameLaunchHost(
             var service = scope.ServiceProvider.GetRequiredService<GameService>();
             var game = await service.GetAsync(gameId).ConfigureAwait(false);
             var client = root.GetRequiredService<GameClient>();
-            var actions = (await client.GetActionsAsync(game.InstallDirectory, gameId).ConfigureAwait(false))
-                .Where(action => action.IsPrimaryAction).ToArray();
-            if (actions.Length != 1)
-                throw new InvalidOperationException("The installed game must have exactly one primary launch action.");
+            var action = RequirePrimaryAction(
+                await client.GetActionsAsync(game.InstallDirectory, gameId).ConfigureAwait(false));
             Task? completion = null;
             await Dispatcher.UIThread.InvokeAsync(() =>
             {
                 EnsureNoQueueOrGameOperation();
-                completion = service.Run(game, actions[0]);
+                completion = service.Run(game, action);
             });
             return new LaunchSession(client, gameId, completion!, scope);
         }
@@ -124,6 +122,15 @@ public sealed class LANCommanderGameLaunchHost(
         if (configured.Length != 1 || !Path.IsPathFullyQualified(configured[0]))
             throw new RemoteOperationException("install_destination_not_configured: configure exactly one absolute game install directory in Launcher settings");
         return configured[0];
+    }
+
+    public static LANCommander.SDK.Models.Manifest.Action RequirePrimaryAction(
+        IEnumerable<LANCommander.SDK.Models.Manifest.Action> actions)
+    {
+        var primary = actions.Where(action => action.Type == ActionType.Primary).ToArray();
+        if (primary.Length != 1)
+            throw new InvalidOperationException("The installed game must have exactly one primary launch action.");
+        return primary[0];
     }
 
     private void EnsureNoQueueOrGameOperation()

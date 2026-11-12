@@ -1,7 +1,7 @@
 # Launcher test package 0.2.1
 
-Actual Windows GUI Launcher plugin targeting **LANCommander v2.2.0-beta.3**,
-source commit `9eefa639a904059c0a03f39e7908332f468828af`, .NET 10.
+Actual Windows GUI Launcher plugin targeting **LANCommander v2.2.0-beta.4**,
+source commit `675befe0673c03aded2b45995694661ce454ba95`, .NET 10.
 The earlier PoC's real HA-to-LC launch was confirmed by the user. This iteration
 adds native configuration, scalable selection and the normal LC install queue.
 Its new GUI and real install workflow still require your smoke test.
@@ -177,7 +177,7 @@ administration if removing the plugin entirely.
 
 ## Verification boundary
 
-Automated checks build from isolated pinned beta.3 source, exercise the actual
+Automated checks build from isolated pinned beta.4 source, exercise the actual
 plugin loader/default host type identity/headless initialization and inspect the
 four-DLL inventory. The actual NuGet artifact is searched on a local feed,
 installed/staged by the pinned host package manager, upgraded with Data

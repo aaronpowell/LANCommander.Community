@@ -129,6 +129,7 @@ public class LcxPackageBuilderTests
             Assert.Equal("v1.2.3", manifest.Version);
             Assert.Contains("owner/repository", manifest.Notes);
             Assert.Equal(Path.Combine("bin", "game.exe"), Assert.Single(manifest.Actions).Path);
+            Assert.Equal(LANCommander.SDK.Enums.ActionType.Primary, Assert.Single(manifest.Actions).Type);
             Assert.Equal(result.ArchiveId, Assert.Single(manifest.Archives).Id);
             Assert.Contains(
                 manifest.CustomFields,

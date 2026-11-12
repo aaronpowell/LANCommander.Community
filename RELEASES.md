@@ -29,10 +29,10 @@ replace a published release asset; choose a new version and matching changelog
 entry for subsequent changes. Values in the files alone do not mean a version
 has been published.
 
-All current components target LANCommander `2.2.0-beta.3`. Server components
+All current components target LANCommander `2.2.0-beta.4`. Server components
 use the matching published NuGet packages. Launcher.MQTT is source-coupled to
 the host and uses the pinned source snapshot in `eng/lancommander-source.json`
-(commit `9eefa639a904059c0a03f39e7908332f468828af`). Do not substitute a
+(commit `675befe0673c03aded2b45995694661ce454ba95`). Do not substitute a
 mutable checkout or invent package adapters for unavailable host contracts.
 
 ## Prerequisites and validation
@@ -94,8 +94,8 @@ runtime exclusions and loader-identity checks.
    `version.txt`:
 
    ```powershell
-   git tag -a server-mcp-v0.2.1 -m "Server.Mcp 0.2.1" <reviewed-main-commit>
-   git push origin server-mcp-v0.2.1
+   git tag -a server-mcp-v0.2.2 -m "Server.Mcp 0.2.2" <reviewed-main-commit>
+   git push origin server-mcp-v0.2.2
    ```
 
    The example is illustrative; check the current version file and release
@@ -113,7 +113,7 @@ existing tag, component version, and `main` ancestry and then uses the normal
 build, release, and feed jobs. Do not move or recreate the tag. For example:
 
 ```powershell
-gh workflow run release.yml --repo aaronpowell/LANCommander.Community --ref main -f tag=server-mcp-v0.2.1
+gh workflow run release.yml --repo aaronpowell/LANCommander.Community --ref main -f tag=server-mcp-v0.2.2
 ```
 
 For a run that successfully built the package but failed later, pass that run's
@@ -225,13 +225,12 @@ preserved by the host updater.
 Discovery metadata does not establish installability. LANCommander inspects
 the single plugin assembly under `lib/<framework>` for its
 `[LANCommanderPlugin]` metadata, including `Hosts` and host-version bounds.
-The launcher installer was rechecked against current upstream main
-[`123ec53`](https://github.com/LANCommander/LANCommander/commit/123ec53a5dd177c2124001ad9f0ce9cb1a6e8acc)
-and the released beta.3 source
-[`9eefa63`](https://github.com/LANCommander/LANCommander/commit/9eefa639a904059c0a03f39e7908332f468828af).
-The beta.3 reader/staging/launcher installer contracts are unchanged in that
-comparison; no unverified host upgrade is needed. The launcher remains bounded
-to beta.3 until another host version is explicitly validated.
+The launcher installer and loader are validated against the released beta.4 source
+[`675befe`](https://github.com/LANCommander/LANCommander/commit/675befe0673c03aded2b45995694661ce454ba95).
+Its package reader/staging contracts still preserve only `Data`. The launcher
+remains bounded to beta.4 until another host version is explicitly validated.
+Beta.4 replaces the primary-action flag with `ActionType.Primary`; the MQTT
+adapter uses that discriminator while retaining the exactly-one-primary guard.
 Earlier upstream discovery research was pinned at commit
 [`38f162d`](https://github.com/LANCommander/LANCommander/commit/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d):
 [`PluginPackageTypes.cs`](https://github.com/LANCommander/LANCommander/blob/38f162ddeb2a3db1388cb898c4e6b20c4f4bf95d/LANCommander.SDK/Plugins/PluginPackageTypes.cs),

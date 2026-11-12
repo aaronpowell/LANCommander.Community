@@ -62,7 +62,7 @@ public sealed class LcxPackageBuilder : IPackageBuilder
                     Path = selectedExecutable.Replace('/', Path.DirectorySeparatorChar),
                     WorkingDirectory = Path.GetDirectoryName(
                         selectedExecutable.Replace('/', Path.DirectorySeparatorChar)) ?? "",
-                    IsPrimaryAction = true,
+                    Type = ActionType.Primary,
                     SortOrder = 0,
                     Platforms = RuntimePlatform.Windows,
                 },

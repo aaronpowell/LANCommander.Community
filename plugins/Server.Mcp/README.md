@@ -11,7 +11,7 @@ match that project name. The persistent plugin ID remains
 
 ## Requirements
 
-- LANCommander server **2.2.0-beta.3 or later** with the server plugin framework.
+- LANCommander server **2.2.0-beta.4 or later** with the server plugin framework.
 - .NET 10 SDK to build.
 - An MCP client supporting Streamable HTTP and an administrator's LANCommander bearer token.
 
@@ -29,7 +29,7 @@ pwsh .\eng\Validate-Plugin.ps1 -Plugin Server.Mcp -OutputDirectory "$env:TEMP\se
 ```
 
 The selected package is written to the output directory as
-`LANCommander.Community.Server.Mcp.0.2.1.nupkg`. Upload it through the server's plugin
+`LANCommander.Community.Server.Mcp.0.2.2.nupkg`. Upload it through the server's plugin
 package installer, then restart LANCommander. The package declares
 `LANCommander.Plugin` and `LANCommander.Plugin.Server` and bundles its private
 dependencies and dependency manifest under `lib/net10.0`. Host-owned LANCommander
@@ -53,8 +53,8 @@ runtime assembly name, and project name now match; the persistent plugin ID is
 unchanged. Do not copy just the main DLL. Use either manual installation or the package
 installer, not both.
 
-The published `0.2.0` package is historical and is not replaced by this
-repository's development version `0.2.1`. See the repository's
+The published `0.2.0` and `0.2.1` packages are historical and are not replaced
+by version `0.2.2`. See the repository's
 [plugin release procedure](../../RELEASES.md) for the current tag, workflow,
 and publication behavior.
 

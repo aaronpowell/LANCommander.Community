@@ -395,7 +395,7 @@ public sealed class McpHttpTests : IAsyncLifetime
         var attribute = Assert.Single(typeof(McpPlugin).Assembly.GetCustomAttributes(typeof(LANCommanderPluginAttribute), false)
             .Cast<LANCommanderPluginAttribute>());
         Assert.Equal(PluginHost.Server, attribute.Hosts);
-        Assert.Equal("2.2.0-beta.3", attribute.MinHostVersion);
+        Assert.Equal("2.2.0-beta.4", attribute.MinHostVersion);
         Assert.False(new McpEndpoints().Access.IsSatisfiedBy(new ClaimsPrincipal(new ClaimsIdentity())));
     }
 }
