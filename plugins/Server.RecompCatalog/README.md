@@ -43,7 +43,7 @@ LANCommander server build that carries the plugin contracts described under
    verify the hash:
 
    ```powershell
-   $package = 'LANCommander.Community.Server.RecompCatalog.Plugin.0.4.2.nupkg'
+   $package = 'LANCommander.Community.Server.RecompCatalog.Plugin.0.4.3.nupkg'
    $expected = (Get-Content "$package.sha256").Split(' ')[0]
    (Get-FileHash $package -Algorithm SHA256).Hash.ToLowerInvariant() -eq $expected
    ```

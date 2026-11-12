@@ -16,23 +16,23 @@ function Assert-Fails {
 
 $single = @(Resolve-PluginSelection -Plugins @('Server.Mcp'))
 Assert-Equal 'Server.Mcp' $single[0].key 'Single-component selection'
-Assert-Equal '0.2.1' $single[0].version 'Single-component version'
+Assert-Equal '0.2.2' $single[0].version 'Single-component version'
 
 $tag = @(Resolve-PluginSelection -Tag 'launcher-mqtt-v0.2.1')
 Assert-Equal 'Launcher.MQTT' $tag[0].key 'Component-tag selection'
 Assert-Equal '0.2.1' $tag[0].version 'Component-tag SemVer'
 
-$quake = @(Resolve-PluginSelection -Tag 'server-quake3-v0.1.0-alpha.1')
+$quake = @(Resolve-PluginSelection -Tag 'server-quake3-v0.1.0-beta.1')
 Assert-Equal 'Server.Quake3' $quake[0].key 'Quake component-tag selection'
-Assert-Equal '0.1.0-alpha.1' $quake[0].version 'Quake independent prerelease'
+Assert-Equal '0.1.0-beta.1' $quake[0].version 'Quake independent prerelease'
 Assert-Equal 4 @(Get-PluginRegistry).Count 'Complete component registry'
 
 $batch = @(Resolve-PluginSelection -Plugins @('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT'))
 Assert-Equal @('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT') @($batch | ForEach-Object key) 'Coordinated LC batch'
-Assert-Equal @('0.2.1', '0.4.2', '0.2.1') @($batch | ForEach-Object version) 'Independent batch versions'
+Assert-Equal @('0.2.2', '0.4.3', '0.2.1') @($batch | ForEach-Object version) 'Independent batch versions'
 
 $all = @(Resolve-PluginSelection -Plugins @('Server.Mcp', 'Server.RecompCatalog', 'Launcher.MQTT', 'Server.Quake3'))
-Assert-Equal @('0.2.1', '0.4.2', '0.2.1', '0.1.0-alpha.1') @($all | ForEach-Object version) 'Four-component independent versions'
+Assert-Equal @('0.2.2', '0.4.3', '0.2.1', '0.1.0-beta.1') @($all | ForEach-Object version) 'Four-component independent versions'
 $quakeMetadata = @(Get-PluginRegistry | Where-Object key -CEQ 'Server.Quake3')[0]
 Assert-Equal '2.2.0-beta.4' $quakeMetadata.minimumHostVersion 'Published Quake host API baseline'
 Assert-Equal '2.2.0-beta.4' $quakeMetadata.hostPackageVersion 'Quake package host baseline'

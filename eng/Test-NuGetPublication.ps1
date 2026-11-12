@@ -2,6 +2,10 @@ $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
 Import-Module (Join-Path $PSScriptRoot 'PluginRelease.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'NuGetRelease.psm1') -Force
+$testComponent = @(Get-PluginRegistry | Where-Object key -CEQ 'Server.Mcp')[0]
+$testVersion = Get-PluginVersion $testComponent
+$testTag = "$($testComponent.tagPrefix)-v$testVersion"
+$wrongTag = "$($testComponent.tagPrefix)-v99.99.99"
 $publisher = Join-Path $PSScriptRoot 'Publish-NuGetPackage.ps1'
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) "lancommander-nuget-tests-$([Guid]::NewGuid().ToString('N'))"
 New-Item -ItemType Directory -Path $testRoot | Out-Null
@@ -11,11 +15,12 @@ function New-TestPackage {
     param(
         [Parameter(Mandatory)][string] $Path,
         [string] $PackageId = 'LANCommander.Community.Server.Mcp',
-        [string] $Version = '0.2.1',
+        [string] $Version,
         [string[]] $Types = @('LANCommander.Plugin', 'LANCommander.Plugin.Server'),
         [string[]] $Tags = @('LANCommander', 'plugin', 'server', 'mcp')
     )
 
+    if (-not $Version) { $Version = $script:testVersion }
     Add-Type -AssemblyName System.IO.Compression.FileSystem
     $stream = [IO.File]::Open($Path, [IO.FileMode]::CreateNew)
     $archive = [System.IO.Compression.ZipArchive]::new($stream, [System.IO.Compression.ZipArchiveMode]::Create)
@@ -96,13 +101,14 @@ function New-TestArtifact {
     param(
         [Parameter(Mandatory)][string] $Directory,
         [string] $PackageId = 'LANCommander.Community.Server.Mcp',
-        [string] $PackageVersion = '0.2.1',
+        [string] $PackageVersion,
         [string] $NuspecId = $PackageId,
         [string] $NuspecVersion = $PackageVersion,
         [string[]] $Types = @('LANCommander.Plugin', 'LANCommander.Plugin.Server'),
         [string[]] $Tags = @('LANCommander', 'plugin', 'server', 'mcp')
     )
 
+    if (-not $PackageVersion) { $PackageVersion = $script:testVersion }
     New-Item -ItemType Directory -Path $Directory | Out-Null
     $assetName = "$PackageId.$PackageVersion.nupkg"
     $assetPath = Join-Path $Directory $assetName
@@ -150,22 +156,22 @@ try {
         $skipJob -notmatch 'NUGET_API_KEY repository secret is not configured') {
         throw 'NuGet.org must be automatically selected only for eligible packages with a configured API key, or report its intentional skip; recovery uses the main publisher commit.'
     }
-    Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+    Assert-ReleaseWorkflowContext -Tag $testTag -Repository 'aaronpowell/LANCommander.Community' `
         -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
         -EventName 'workflow_dispatch' -Ref 'refs/heads/main'
     Assert-Fails {
-        Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+        Assert-ReleaseWorkflowContext -Tag $testTag -Repository 'aaronpowell/LANCommander.Community' `
             -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
             -EventName 'workflow_dispatch' -Ref 'refs/heads/feature'
     } 'main-branch recovery dispatch' 'Non-main NuGet recovery dispatch'
-    Assert-ReleaseSourceCheckout -Tag 'server-mcp-v0.2.1' -TagCommit 'abc' -HeadCommit 'abc' `
-        -WorkflowCommit 'abc' -EventName 'push' -Ref 'refs/tags/server-mcp-v0.2.1' `
+    Assert-ReleaseSourceCheckout -Tag $testTag -TagCommit 'abc' -HeadCommit 'abc' `
+        -WorkflowCommit 'abc' -EventName 'push' -Ref "refs/tags/$testTag" `
         -TagIsAncestorOfMain $true
-    Assert-ReleaseSourceCheckout -Tag 'server-mcp-v0.2.1' -TagCommit 'abc' -HeadCommit 'def' `
+    Assert-ReleaseSourceCheckout -Tag $testTag -TagCommit 'abc' -HeadCommit 'def' `
         -WorkflowCommit 'def' -EventName 'workflow_dispatch' -Ref 'refs/heads/main' `
         -TagIsAncestorOfMain $true
     Assert-Fails {
-        Assert-ReleaseSourceCheckout -Tag 'server-mcp-v0.2.1' -TagCommit 'abc' -HeadCommit 'def' `
+        Assert-ReleaseSourceCheckout -Tag $testTag -TagCommit 'abc' -HeadCommit 'def' `
             -WorkflowCommit 'def' -EventName 'workflow_dispatch' -Ref 'refs/heads/main' `
             -TagIsAncestorOfMain $false
     } 'tag reachable from main' 'Unreviewed source tag recovery'
@@ -180,54 +186,54 @@ try {
     $validDirectory = Join-Path $testRoot 'valid'
     New-TestArtifact -Directory $validDirectory
 
-    $disabledOutput = (& $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $validDirectory 2>&1) -join "`n"
+    $disabledOutput = (& $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $validDirectory 2>&1) -join "`n"
     if ($disabledOutput -notmatch 'publication is disabled') {
         throw 'The default NuGet path did not remain disabled.'
     }
 
-    $planOutput = (& $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $validDirectory -Publish -PlanOnly 2>&1) -join "`n"
+    $planOutput = (& $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $validDirectory -Publish -PlanOnly 2>&1) -join "`n"
     $plan = $planOutput -split "\r?\n" | Where-Object { $_ -match '^\{"component"' } | Select-Object -Last 1 | ConvertFrom-Json
     if ($plan.component -cne 'Server.Mcp' -or $plan.packageId -cne 'LANCommander.Community.Server.Mcp' -or
-        $plan.version -cne '0.2.1' -or $plan.publishRequested -ne $true) {
+        $plan.version -cne $testVersion -or $plan.publishRequested -ne $true) {
         throw 'The opt-in package plan did not preserve component, package identity, and version.'
     }
     Assert-Fails {
-        & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.2 -ArtifactDirectory $validDirectory -Publish -PlanOnly
+        & $publisher -Plugin Server.Mcp -Tag $wrongTag -ArtifactDirectory $validDirectory -Publish -PlanOnly
     } 'does not match' 'Release tag selection'
 
     Assert-Fails {
-        & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $validDirectory -Publish
+        & $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $validDirectory -Publish
     } 'NUGET_API_KEY' 'Missing NuGet credential'
 
     $env:NUGET_API_KEY = 'test-only-not-a-real-key'
     Assert-Fails {
-        & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $validDirectory -Publish
+        & $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $validDirectory -Publish
     } 'protected GitHub Actions workflow' 'Tag workflow guard'
     Remove-Item Env:NUGET_API_KEY -ErrorAction SilentlyContinue
 
     $wrongIdDirectory = Join-Path $testRoot 'wrong-id'
     New-TestArtifact -Directory $wrongIdDirectory -NuspecId 'LANCommander.Wrong'
     Assert-Fails {
-        & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $wrongIdDirectory -Publish -PlanOnly
+        & $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $wrongIdDirectory -Publish -PlanOnly
     } 'identity/version mismatch' 'Package identity validation'
 
     $wrongVersionDirectory = Join-Path $testRoot 'wrong-version'
     New-TestArtifact -Directory $wrongVersionDirectory -NuspecVersion '9.9.9'
     Assert-Fails {
-        & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $wrongVersionDirectory -Publish -PlanOnly
+        & $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $wrongVersionDirectory -Publish -PlanOnly
     } 'identity/version mismatch' 'Package version validation'
 
     $wrongTypesDirectory = Join-Path $testRoot 'wrong-types'
     New-TestArtifact -Directory $wrongTypesDirectory -Types @('LANCommander.Plugin')
     Assert-Fails {
-        & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $wrongTypesDirectory -Publish -PlanOnly
+        & $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $wrongTypesDirectory -Publish -PlanOnly
     } 'Package types' 'Package type validation'
 
     $wrongChecksumDirectory = Join-Path $testRoot 'wrong-checksum'
     New-TestArtifact -Directory $wrongChecksumDirectory
-    Set-Content -LiteralPath (Join-Path $wrongChecksumDirectory 'LANCommander.Community.Server.Mcp.0.2.1.nupkg.sha256') -Value 'bad checksum'
+    Set-Content -LiteralPath (Join-Path $wrongChecksumDirectory "LANCommander.Community.Server.Mcp.$testVersion.nupkg.sha256") -Value 'bad checksum'
     Assert-Fails {
-        & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $wrongChecksumDirectory -Publish -PlanOnly
+        & $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $wrongChecksumDirectory -Publish -PlanOnly
     } 'checksum sidecar' 'Artifact integrity validation'
 
     $manifestPath = Join-Path $validDirectory 'release-manifest.json'
@@ -235,12 +241,12 @@ try {
     try {
         Set-Content -LiteralPath $manifestPath -Value ($manifestText.Replace('"nupkg"', '"zip"'))
         Assert-Fails {
-            & $publisher -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $validDirectory -Publish -PlanOnly
+            & $publisher -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $validDirectory -Publish -PlanOnly
         } 'manifest does not match' 'ZIP artifact rejected by NuGet publisher'
     }
     finally { Set-Content -LiteralPath $manifestPath -Value $manifestText }
 
-    $expectedPackagePath = Join-Path $validDirectory 'LANCommander.Community.Server.Mcp.0.2.1.nupkg'
+    $expectedPackagePath = Join-Path $validDirectory "LANCommander.Community.Server.Mcp.$testVersion.nupkg"
     $signedPackagePath = Join-Path $testRoot 'repository-signed.nupkg'
     New-RepositorySignedTestPackage -SourcePath $expectedPackagePath -DestinationPath $signedPackagePath
     $validVerificationOutput = @'
@@ -252,7 +258,7 @@ Service index: https://api.nuget.org/v3/index.json
     Compare-NuGetPackagePayload -ExpectedPackagePath $expectedPackagePath -PublishedPackagePath $signedPackagePath
 
     $changedNuspecPath = Join-Path $testRoot 'changed-nuspec.nupkg'
-    New-TestPackage -Path $changedNuspecPath -PackageId 'LANCommander.Community.Server.Mcp' -Version '0.2.1' -Tags @('changed')
+    New-TestPackage -Path $changedNuspecPath -PackageId 'LANCommander.Community.Server.Mcp' -Version $testVersion -Tags @('changed')
     $changedNuspecSignedPath = Join-Path $testRoot 'changed-nuspec-signed.nupkg'
     New-RepositorySignedTestPackage -SourcePath $changedNuspecPath -DestinationPath $changedNuspecSignedPath
     Assert-Fails {

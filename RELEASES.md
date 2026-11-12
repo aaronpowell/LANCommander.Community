@@ -94,8 +94,8 @@ runtime exclusions and loader-identity checks.
    `version.txt`:
 
    ```powershell
-   git tag -a server-mcp-v0.2.1 -m "Server.Mcp 0.2.1" <reviewed-main-commit>
-   git push origin server-mcp-v0.2.1
+   git tag -a server-mcp-v0.2.2 -m "Server.Mcp 0.2.2" <reviewed-main-commit>
+   git push origin server-mcp-v0.2.2
    ```
 
    The example is illustrative; check the current version file and release
@@ -113,7 +113,7 @@ existing tag, component version, and `main` ancestry and then uses the normal
 build, release, and feed jobs. Do not move or recreate the tag. For example:
 
 ```powershell
-gh workflow run release.yml --repo aaronpowell/LANCommander.Community --ref main -f tag=server-mcp-v0.2.1
+gh workflow run release.yml --repo aaronpowell/LANCommander.Community --ref main -f tag=server-mcp-v0.2.2
 ```
 
 For a run that successfully built the package but failed later, pass that run's

@@ -2,6 +2,10 @@ $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path $PSScriptRoot -Parent
 Import-Module (Join-Path $PSScriptRoot 'PluginRelease.psm1') -Force
 Import-Module (Join-Path $PSScriptRoot 'GitHubPackages.psm1') -Force
+$testComponent = @(Get-PluginRegistry | Where-Object key -CEQ 'Server.Mcp')[0]
+$testVersion = Get-PluginVersion $testComponent
+$testTag = "$($testComponent.tagPrefix)-v$testVersion"
+$wrongTag = "$($testComponent.tagPrefix)-v99.99.99"
 $testRoot = Join-Path ([IO.Path]::GetTempPath()) "lancommander-github-packages-$([Guid]::NewGuid().ToString('N'))"
 New-Item -ItemType Directory -Path $testRoot | Out-Null
 $originalGitHubToken = [Environment]::GetEnvironmentVariable('GITHUB_TOKEN', 'Process')
@@ -13,12 +17,12 @@ function New-TestPackage {
     $stream = [IO.File]::Open($Path, [IO.FileMode]::CreateNew)
     $archive = [System.IO.Compression.ZipArchive]::new($stream, [System.IO.Compression.ZipArchiveMode]::Create)
     try {
-        $nuspec = @'
+        $nuspec = @"
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
-    <id>LANCommander.Community.Server.Mcp</id>
-    <version>0.2.1</version>
+    <id>$($testComponent.packageId)</id>
+    <version>$testVersion</version>
     <authors>test</authors>
     <description>Test package</description>
     <tags>LANCommander plugin server mcp</tags>
@@ -26,7 +30,7 @@ function New-TestPackage {
     <repository type="git" url="https://github.com/aaronpowell/LANCommander.Community" />
   </metadata>
 </package>
-'@
+"@
         foreach ($entryData in @(
             @{ name = 'LANCommander.Community.Server.Mcp.nuspec'; value = $nuspec },
             @{ name = 'lib/net10.0/payload.dll'; value = $Payload }
@@ -140,29 +144,29 @@ try {
         throw 'Component releases must provide scoped caller permissions, optional NuGet.org secret forwarding, and exact-artifact main-only recovery dispatch.'
     }
 
-    Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+    Assert-ReleaseWorkflowContext -Tag $testTag -Repository 'aaronpowell/LANCommander.Community' `
         -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
-        -EventName 'push' -Ref 'refs/tags/server-mcp-v0.2.1'
-    Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+        -EventName 'push' -Ref "refs/tags/$testTag"
+    Assert-ReleaseWorkflowContext -Tag $testTag -Repository 'aaronpowell/LANCommander.Community' `
         -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
         -EventName 'workflow_dispatch' -Ref 'refs/heads/main'
     Assert-Fails {
-        Assert-ReleaseWorkflowContext -Tag 'server-mcp-v0.2.1' -Repository 'aaronpowell/LANCommander.Community' `
+        Assert-ReleaseWorkflowContext -Tag $testTag -Repository 'aaronpowell/LANCommander.Community' `
             -ExpectedRepository 'aaronpowell/LANCommander.Community' -Actions 'true' `
             -EventName 'workflow_dispatch' -Ref 'refs/heads/feature'
     } 'main-branch recovery dispatch' 'Non-main recovery dispatch'
 
     $artifactDirectory = Join-Path $testRoot 'artifact'
     New-Item -ItemType Directory -Path $artifactDirectory | Out-Null
-    $packageName = 'LANCommander.Community.Server.Mcp.0.2.1.nupkg'
+    $packageName = "$($testComponent.packageId).$testVersion.nupkg"
     $packagePath = Join-Path $artifactDirectory $packageName
     New-TestPackage -Path $packagePath
-    & (Join-Path $PSScriptRoot 'Test-NuGetPackage.ps1') -Plugin Server.Mcp -PackagePath $packagePath -ExpectedVersion '0.2.1' -RequireRepositoryUrl
+    & (Join-Path $PSScriptRoot 'Test-NuGetPackage.ps1') -Plugin Server.Mcp -PackagePath $packagePath -ExpectedVersion $testVersion -RequireRepositoryUrl
     $hash = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
     Set-Content -LiteralPath "$packagePath.sha256" -Value "$hash  $packageName" -NoNewline
     [ordered]@{
         component = 'Server.Mcp'
-        version = '0.2.1'
+        version = $testVersion
         host = 'Server'
         minimumHostVersion = '2.2.0-beta.4'
         maximumHostVersion = $null
@@ -172,10 +176,10 @@ try {
         sourceCommit = '0000000000000000000000000000000000000000'
     } | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $artifactDirectory 'release-manifest.json')
 
-    $disabledOutput = (& (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community 2>&1) -join "`n"
+    $disabledOutput = (& (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community 2>&1) -join "`n"
     if ($disabledOutput -notmatch 'publishing is disabled') { throw 'The default GitHub Packages path did not remain disabled.' }
 
-    $planOutput = (& (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly 2>&1) -join "`n"
+    $planOutput = (& (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly 2>&1) -join "`n"
     $planLine = @($planOutput -split "\r?\n" | Where-Object { $_ -match '^\{"component"' }) | Select-Object -Last 1
     $plan = $planLine | ConvertFrom-Json
     if ($plan.component -cne 'Server.Mcp' -or
@@ -187,22 +191,22 @@ try {
     }
     Remove-Item Env:GITHUB_TOKEN -ErrorAction SilentlyContinue
     Assert-Fails {
-        & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish
+        & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish
     } 'GITHUB_TOKEN is unavailable' 'Missing GitHub Packages credential'
     Assert-Fails {
-        & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.2 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly
+        & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag $wrongTag -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly
     } 'does not match' 'Release tag selection'
     $manifestPath = Join-Path $artifactDirectory 'release-manifest.json'
     $manifestText = Get-Content -LiteralPath $manifestPath -Raw
     try {
         Set-Content -LiteralPath $manifestPath -Value ($manifestText.Replace('"nupkg"', '"zip"'))
         Assert-Fails {
-            & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly
+            & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $artifactDirectory -Owner aaronpowell -Repository aaronpowell/LANCommander.Community -Publish -PlanOnly
         } 'manifest does not match' 'ZIP artifact rejected by NuGet publisher'
     }
     finally { Set-Content -LiteralPath $manifestPath -Value $manifestText }
     Assert-Fails {
-        & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag server-mcp-v0.2.1 -ArtifactDirectory $artifactDirectory -Owner someone-else -Repository someone-else/LANCommander.Community -Publish -PlanOnly
+        & (Join-Path $PSScriptRoot 'Publish-GitHubPackage.ps1') -Plugin Server.Mcp -Tag $testTag -ArtifactDirectory $artifactDirectory -Owner someone-else -Repository someone-else/LANCommander.Community -Publish -PlanOnly
     } 'restricted to the canonical' 'Repository/owner guard'
 
     $equivalentPath = Join-Path $testRoot 'equivalent.nupkg'

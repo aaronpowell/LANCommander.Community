@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.1.0-beta.1
 
-- Update host packages and minimum host version to LANCommander 2.2.0-beta.4
-  without changing the component version or existing releases.
+- Update host packages and minimum host version to LANCommander 2.2.0-beta.4.
+- Retain the host-routed file contracts and validate package loading against the
+  beta.4 host packages.
 
 ## 0.1.0-alpha.1
 

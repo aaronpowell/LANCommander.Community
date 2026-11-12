@@ -7,10 +7,10 @@ The source projects and namespaces use
 folder now use their project names, including
 `Plugins/LANCommander.Community.Launcher.MQTT.Plugin`. The persistent plugin ID
 and `homeassistant.json` configuration identity remain unchanged. Version 0.2.1
-is an unreleased packaging/data-safety update to the published 0.2.0 ZIP
-prototype; this change does not publish a release or replace that ZIP.
+is the first NuGet release, following the original 0.2.0 ZIP prototype; the
+published ZIP and tag remain unchanged.
 
-## Current prototype (0.2.1)
+## Current version (0.2.1)
 
 Open **Launcher settings > Home Assistant MQTT** to configure broker address/port,
 username, masked password, optional TLS, stable client ID and topic prefix.
@@ -114,7 +114,7 @@ Installation is staged until restart. Releases use GitHub Packages automatically
 NuGet.org is used only if the release workflow has `NUGET_API_KEY`.
 Feed visibility/authentication is configured by the user/maintainer, not this
 plugin. The existing 0.2.0 ZIP is immutable and is not retroactively published
-as NuGet. Version 0.2.1 is not published by this change.
+as NuGet. Version 0.2.1 uses the beta.4 host baseline.
 
 **Existing ZIP installations require preparation before a NuGet upgrade.**
 The host updater replaces the plugin folder and preserves **only `Data`**.
