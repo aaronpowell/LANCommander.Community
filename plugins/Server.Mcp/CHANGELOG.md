@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Update host packages and minimum host version to LANCommander 2.2.0-beta.4
+  without changing the component version or existing releases.
 - The MCP setup page now shows the endpoint derived from LANCommander's address
   and path base (with an unsaved override), and tabbed, copyable client setup
   for the GitHub Copilot app, Claude Code, Codex and general MCP clients using

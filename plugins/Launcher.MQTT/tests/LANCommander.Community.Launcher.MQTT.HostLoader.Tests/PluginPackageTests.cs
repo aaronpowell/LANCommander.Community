@@ -31,7 +31,7 @@ public sealed class PluginPackageTests
         Assert.Empty((await feeds.SearchAsync("", PluginPackageTypes.Server)).Packages);
         var staging = new PluginStaging(root, Path.Combine(root, ".staging"));
         var manager = new PluginPackageManager(PluginHost.Launcher, feeds, new PluginLoaderService(),
-            staging, NullLogger.Instance, "2.2.0-beta.3", NuGetFramework.Parse("net10.0"));
+            staging, NullLogger.Instance, "2.2.0-beta.4", NuGetFramework.Parse("net10.0"));
         await using (var stream = File.OpenRead(packagePath!))
         {
             var result = await manager.InstallAsync(stream);
@@ -54,16 +54,17 @@ public sealed class PluginPackageTests
         Assert.False(File.Exists(Path.Combine(installed, "homeassistant.json")));
         var loader = new PluginLoaderService();
         var services = new ServiceCollection().AddLogging();
-        loader.DiscoverAndConfigure(services, PluginHost.Launcher, root, "2.2.0-beta.3", NullLogger.Instance);
+        loader.DiscoverAndConfigure(services, PluginHost.Launcher, root, "2.2.0-beta.4", NullLogger.Instance);
         var plugin = Assert.Single(loader.Plugins);
         Assert.Equal("com.aaronpowell.lancommander.homeassistant", plugin.Plugin.Id);
         Assert.Equal(expectedVersion, plugin.Plugin.Version);
     }
 
     [Theory]
-    [InlineData(PluginHost.Server, "2.2.0-beta.3")]
+    [InlineData(PluginHost.Server, "2.2.0-beta.4")]
     [InlineData(PluginHost.Launcher, "2.2.0-alpha.4")]
-    [InlineData(PluginHost.Launcher, "2.2.0-beta.4")]
+    [InlineData(PluginHost.Launcher, "2.2.0-beta.3")]
+    [InlineData(PluginHost.Launcher, "2.2.0-beta.5")]
     public void Actual_package_rejects_wrong_host_or_unverified_version(PluginHost host, string version)
     {
         var packagePath = Environment.GetEnvironmentVariable("LANCOMMANDER_MQTT_PACKAGE_PATH");

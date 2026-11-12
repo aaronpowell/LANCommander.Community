@@ -113,7 +113,7 @@ function New-TestArtifact {
         component = 'Server.Mcp'
         version = $PackageVersion
         host = 'Server'
-        minimumHostVersion = '2.2.0-beta.3'
+        minimumHostVersion = '2.2.0-beta.4'
         maximumHostVersion = $null
         artifactFormat = 'nupkg'
         asset = $assetName

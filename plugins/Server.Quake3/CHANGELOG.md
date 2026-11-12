@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Update host packages and minimum host version to LANCommander 2.2.0-beta.4
+  without changing the component version or existing releases.
+
 ## 0.1.0-alpha.1
 
 - Add native administrator-only Quake 3 server selection, status, bounded

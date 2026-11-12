@@ -95,11 +95,11 @@ for eligibility, permissions, and retry behavior.
 The plugin builds against the LANCommander NuGet packages `LANCommander.SDK`,
 `LANCommander.Server.Plugins`, and `LANCommander.Server.UI`. Their shared version
 is `LANCommanderPackageVersion` in the repository-root `Directory.Packages.props`
-(`2.2.0-beta.3`).
+(`2.2.0-beta.4`).
 
 The plugin needs the host contracts (`IMetadataLookup`, version redistributables, and bulk custom
 field reads) originally added in `2.2.0-alpha.3`. This build targets
-`2.2.0-beta.3` or later:
+`2.2.0-beta.4` or later:
 
 ```powershell
 dotnet build .\LANCommander.Community.slnx -c Release
@@ -305,7 +305,7 @@ nothing is administrator-only by default.
 LANCommander's plugin load context treats `LANCommander.SDK`, `LANCommander.Server.Plugins`, and
 `LANCommander.Server.UI` as shared host assemblies, so the plugin resolves the server's
 already-loaded copies instead of loading second ones. The server must be LANCommander
-`2.2.0-beta.3` or later; older 2.2.0 prereleases fail to activate this build.
+`2.2.0-beta.4` or later; older 2.2.0 prereleases fail to activate this build.
 
 ## Known gaps
 

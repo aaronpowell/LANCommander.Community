@@ -10,13 +10,13 @@ the container.
 
 ## Compatibility and development status
 
-Requires LANCommander Server **2.2.0-beta.3 or later**. The Quake-specific
+Requires LANCommander Server **2.2.0-beta.4 or later**. The Quake-specific
 central package file pins only this plugin's SDK, Server.Plugins and Server.UI
-contracts to published `2.2.0-beta.3`, matching the shared host baseline.
+contracts to published `2.2.0-beta.4`, matching the shared host baseline.
 The host provides `IServerProvider.ListFilesAsync`, `OpenFileAsync`,
 `WriteFileAsync` and `ServerFileInfo`. These APIs were added in
 [LANCommander/LANCommander#480](https://github.com/LANCommander/LANCommander/pull/480)
-and are included in beta.3. A running host must itself be beta.3 or later;
+and remain available in beta.4. A running host must itself be beta.4 or later;
 restoring compile-time NuGet packages does not upgrade the server.
 
 The plugin package and assembly are both
@@ -119,8 +119,8 @@ Deleting/replacing state is an operator action, not an automatic recovery.
 ## Build and verification
 
 The pinned public host packages were built from upstream tag
-`v2.2.0-beta.3` (source commit
-`9eefa639a904059c0a03f39e7908332f468828af`).
+`v2.2.0-beta.4` (source commit
+`675befe0673c03aded2b45995694661ce454ba95`).
 
 Requires .NET 10 SDK and PowerShell 7. Core tests do not need LC, Docker or
 game assets:

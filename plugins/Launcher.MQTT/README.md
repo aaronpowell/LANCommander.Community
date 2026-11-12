@@ -43,7 +43,7 @@ rejects new requests rather than evicting valid IDs. Accepted is not completed;
 install success requires terminal queue status and an installed record/manifest.
 Launch completion means the normal LC run returned, not an exit-code verdict.
 
-The source-pinned adapter and MQTT transport are now implemented as well. The host adapter builds against the exact `v2.2.0-beta.3` source tree, starts only in the GUI launcher, and keeps a fresh service scope alive for the full `GameService.Run` task. It launches only one unambiguous primary action for an allowlisted, already-installed game. The adapter retains verified source project references for its launcher service contracts and host-loader tests.
+The source-pinned adapter and MQTT transport are now implemented as well. The host adapter builds against the exact `v2.2.0-beta.4` source tree, starts only in the GUI launcher, and keeps a fresh service scope alive for the full `GameService.Run` task. It launches only one unambiguous `ActionType.Primary` action for an allowlisted, already-installed game. The adapter retains verified source project references for its launcher service contracts and host-loader tests.
 
 The MQTT client uses authenticated MQTT 5, clean sessions, non-retained commands/results,
 retained discovery/state and last will, bounded ingress and reconnect/HA-birth replay.
@@ -108,7 +108,7 @@ are supplementary, not the installer contract. Build and validate locally:
 pwsh .\eng\Validate-Plugin.ps1 -Plugin Launcher.MQTT -OutputDirectory "C:\path\to\new-artifact-folder"
 ```
 
-Use LANCommander **2.2.0-beta.3**'s Launcher plugin manager to install the local
+Use LANCommander **2.2.0-beta.4**'s Launcher plugin manager to install the local
 `.nupkg`, or find this package in a configured feed after a maintainer release.
 Installation is staged until restart. Releases use GitHub Packages automatically;
 NuGet.org is used only if the release workflow has `NUGET_API_KEY`.
@@ -156,7 +156,7 @@ whole archive, `lib` wrapper, or any host DLLs into `Plugins`.
 1. Install through the Launcher plugin manager (see above and the [test guide](examples/TEST-GUIDE.md)), restart the GUI and configure it in Launcher settings. Alternatively copy `src\LANCommander.Community.Launcher.MQTT.Plugin\homeassistant.example.json` to the plugin's `Data/homeassistant.json` and fill it in locally. `ExposureMode` is `"selected"` (default; `Favorites` is the UUID/title allowlist, now unlimited) or `"all"` (the authenticated visible library). An empty selection safely exposes no games.
 2. Set `UseTls` to `false` for plaintext MQTT (usually port `1883`), or `true` for TLS (usually port `8883`). Use the port configured on your broker; it is not changed automatically. Certificate errors are ignored when TLS is enabled. Existing configurations must add `BrokerUsername` and `BrokerPassword`; no Credential Manager entry is read.
 3. Use the repository validation command to materialize the pinned LANCommander
-   `v2.2.0-beta.3` source commit and run the core/loader/template tests:
+   `v2.2.0-beta.4` source commit and run the core/loader/template tests:
 
    ```powershell
    pwsh .\eng\Validate-Plugin.ps1 -Plugin Launcher.MQTT -OutputDirectory "C:\path\to\new-artifact-folder"
@@ -194,7 +194,7 @@ and `command/install_selected` require matching actions and an empty UUID
 `00000000-0000-0000-0000-000000000000`. All use the same request ID/time envelope.
 Selected-action results contain the resolved UUID. Do not retain any command.
 
-To repeat package discovery, installation, Data-preserving update and beta.3
+To repeat package discovery, installation, Data-preserving update and beta.4
 host-loader checks against the actual artifact:
 
 ```powershell
@@ -219,17 +219,15 @@ replace a manual button press on a running Home Assistant installation.
 
 ### Verified package contracts
 
-The released beta.3 source at
-[`9eefa63`](https://github.com/LANCommander/LANCommander/commit/9eefa639a904059c0a03f39e7908332f468828af)
-already supports launcher NuGet installation. This was rechecked against
-current main
-[`123ec53`](https://github.com/LANCommander/LANCommander/commit/123ec53a5dd177c2124001ad9f0ce9cb1a6e8acc).
+The released beta.4 source at
+[`675befe`](https://github.com/LANCommander/LANCommander/commit/675befe0673c03aded2b45995694661ce454ba95)
+supports launcher NuGet installation and is the verified build/load baseline.
 The package reader selects `lib/<framework>`, inspects one assembly attribute
 for launcher host/version compatibility and installs the assembly-named folder.
 The staging updater retains only `Data`:
-[`PluginPackageReader`](https://github.com/LANCommander/LANCommander/blob/9eefa639a904059c0a03f39e7908332f468828af/LANCommander.PluginManagement/PluginPackageReader.cs),
-[`PluginStaging`](https://github.com/LANCommander/LANCommander/blob/9eefa639a904059c0a03f39e7908332f468828af/LANCommander.PluginManagement/PluginStaging.cs),
-[`LauncherPluginService`](https://github.com/LANCommander/LANCommander/blob/9eefa639a904059c0a03f39e7908332f468828af/LANCommander.Launcher.Services/Plugins/LauncherPluginService.cs).
+[`PluginPackageReader`](https://github.com/LANCommander/LANCommander/blob/675befe0673c03aded2b45995694661ce454ba95/LANCommander.PluginManagement/PluginPackageReader.cs),
+[`PluginStaging`](https://github.com/LANCommander/LANCommander/blob/675befe0673c03aded2b45995694661ce454ba95/LANCommander.PluginManagement/PluginStaging.cs),
+[`LauncherPluginService`](https://github.com/LANCommander/LANCommander/blob/675befe0673c03aded2b45995694661ce454ba95/LANCommander.Launcher.Services/Plugins/LauncherPluginService.cs).
 The service/package-management host projects are not published as usable
-NuGet dependencies, so source pinning remains necessary. The exact beta.3
-minimum/maximum range is unchanged; newer hosts are not claimed compatible.
+NuGet dependencies, so source pinning remains necessary. The exact beta.4
+minimum/maximum range excludes older and newer hosts until separately verified.

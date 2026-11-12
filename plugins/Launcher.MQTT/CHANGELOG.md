@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Update the source pin and exact host bounds to released LANCommander
+  2.2.0-beta.4. Use `ActionType.Primary` rather than the legacy read-only
+  primary-action flag, retaining the exactly-one-primary safety check.
+- Component versions and existing release artifacts are unchanged.
+
 ## 0.2.1
 
 Unreleased: package the launcher as `LANCommander.Community.Launcher.MQTT.Plugin`

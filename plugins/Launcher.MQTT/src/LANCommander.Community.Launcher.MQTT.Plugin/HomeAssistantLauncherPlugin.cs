@@ -12,8 +12,8 @@ using System.Reflection;
     typeof(LANCommander.Community.Launcher.MQTT.HomeAssistantLauncherPlugin),
     Id = "com.aaronpowell.lancommander.homeassistant",
     Hosts = PluginHost.Launcher,
-    MinHostVersion = "2.2.0-beta.3",
-    MaxHostVersion = "2.2.0-beta.3")]
+    MinHostVersion = "2.2.0-beta.4",
+    MaxHostVersion = "2.2.0-beta.4")]
 
 namespace LANCommander.Community.Launcher.MQTT;
 
