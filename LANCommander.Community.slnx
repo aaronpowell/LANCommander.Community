@@ -1,4 +1,6 @@
 <Solution>
+  <Project Path="plugins/Server.DiscordWebhook/src/LANCommander.Community.Server.DiscordWebhook/LANCommander.Community.Server.DiscordWebhook.csproj" />
+  <Project Path="plugins/Server.DiscordWebhook/tests/LANCommander.Community.Server.DiscordWebhook.Tests/LANCommander.Community.Server.DiscordWebhook.Tests.csproj" />
   <Project Path="plugins/Server.Quake3/LANCommander.Community.Server.Quake3/LANCommander.Community.Server.Quake3.csproj" />
   <Project Path="plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Core/LANCommander.Community.Server.Quake3.Core.csproj" />
   <Project Path="plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Tests/LANCommander.Community.Server.Quake3.Tests.csproj" />

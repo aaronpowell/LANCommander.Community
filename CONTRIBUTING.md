@@ -20,5 +20,10 @@ procedures. Repository-local agent guidance is under
 [release preparation](.github/skills/plugin-release/SKILL.md), and
 [authoring more skills](.github/skills/repository-skill-authoring/SKILL.md).
 
+The [Discord webhook groundwork](plugins/Server.DiscordWebhook/README.md) is
+non-packable while its subscription-action host integration is blocked. Run its
+focused `dotnet test` command from that README; do not add it to release
+selection or claim it is an installable plugin before integration is verified.
+
 Do not create or push release tags, publish releases, or change deployed
 identities without explicit maintainer authorization.

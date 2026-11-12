@@ -26,6 +26,8 @@ jobs:
           ./eng/Test-GitHubPackages.ps1
       - name: Validate Quake core safety tests
         run: dotnet test plugins/Server.Quake3/LANCommander.Community.Server.Quake3.Tests/LANCommander.Community.Server.Quake3.Tests.csproj -c Release --nologo
+      - name: Validate Discord webhook groundwork (not an installable plugin)
+        run: dotnet test plugins/Server.DiscordWebhook/tests/LANCommander.Community.Server.DiscordWebhook.Tests/LANCommander.Community.Server.DiscordWebhook.Tests.csproj -c Release --nologo
 
   validate:
     runs-on: ubuntu-latest

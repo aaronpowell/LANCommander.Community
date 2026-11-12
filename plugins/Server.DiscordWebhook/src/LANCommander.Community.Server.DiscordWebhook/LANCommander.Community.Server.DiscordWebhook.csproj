@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>LANCommander.Community.Server.DiscordWebhook</RootNamespace>
+    <AssemblyName>LANCommander.Community.Server.DiscordWebhook</AssemblyName>
+    <PackageId>LANCommander.Community.Server.DiscordWebhook</PackageId>
+    <!-- No installable plugin until the host publishes a subscription action contract. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>
